@@ -1,0 +1,241 @@
+/* 비교파트 core: data, helpers, icons, compare tray, router.
+ * Plain scripts (no modules) so the same files run on GitHub Pages and
+ * inside the iOS / Android WebView from local files. */
+(function () {
+  'use strict';
+
+  var BP = (window.BP = window.BP || {});
+  var CONFIG = (BP.config = window.BIGYO_CONFIG || {});
+  var DATA = (window.BIGYO_DATA && window.BIGYO_DATA.apartments) || [];
+
+  BP.inApp = /BigyoPateuApp/i.test(navigator.userAgent);
+
+  /* ---------- data ---------- */
+  var byId = {};
+  DATA.forEach(function (a) { byId[a.id] = a; });
+  BP.apartments = DATA;
+  BP.get = function (id) { return byId[id]; };
+  BP.areas = function () {
+    var seen = [];
+    DATA.forEach(function (a) { if (a.dong && seen.indexOf(a.dong) < 0) seen.push(a.dong); });
+    return seen;
+  };
+  BP.inArea = function (area) { return DATA.filter(function (a) { return !area || a.dong === area; }); };
+
+  BP.AMENITIES = [
+    { key: 'playground', label: '놀이터' },
+    { key: 'gym', label: '헬스장' },
+    { key: 'sauna', label: '사우나' },
+    { key: 'pool', label: '수영장' },
+    { key: 'cafe', label: '카페' },
+    { key: 'library', label: '도서관 / 스터디카페' },
+    { key: 'seniorCenter', label: '경로당' },
+    { key: 'meals', label: '식사 제공' },
+    { key: 'guestHouse', label: '게스트하우스' }
+  ];
+  BP.hasAll = function (apt, keys) { return keys.every(function (k) { return apt[k] === true; }); };
+
+  /* ---------- formatting ---------- */
+  var esc = (BP.esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  });
+  BP.dash = function (v, suffix) { return v == null || v === '' ? '-' : esc(v) + (suffix || ''); };
+  BP.n = function (v) { return v == null ? '-' : Number(v).toLocaleString('ko-KR'); };
+  BP.won = function (v) {
+    if (v == null) return '-';
+    var man = Math.floor(v / 10000), rest = v % 10000;
+    return (man ? man + '만 ' : '') + (rest ? rest.toLocaleString('ko-KR') : '') + '원';
+  };
+  BP.age = function (a) { return a.approvedYear ? new Date().getFullYear() - a.approvedYear : null; };
+  BP.aptUrl = function (a) { return '#/apt/' + encodeURIComponent(a.id); };
+
+  /* ---------- storage (never required) ---------- */
+  BP.store = {
+    get: function (k, fallback) { try { var v = localStorage.getItem('bigyo.' + k); return v == null ? fallback : JSON.parse(v); } catch (e) { return fallback; } },
+    set: function (k, v) { try { localStorage.setItem('bigyo.' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+
+  /* ---------- icons ---------- */
+  var P = {
+    map: 'M14.1 6.3 9.9 4.2a2 2 0 0 0-1.8 0L3.6 6.5A1 1 0 0 0 3 7.4v12a1 1 0 0 0 1.4.9l3.7-1.8a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.3a1 1 0 0 0 .6-.9v-12a1 1 0 0 0-1.4-.9l-3.7 1.8a2 2 0 0 1-1.8 0ZM15 6v15M9 3v15',
+    building: 'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18ZM6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4',
+    compare: 'M12 3v18M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM6 8h3M6 12h3M15 8h3M15 12h3',
+    tools: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',
+    school: 'M21.4 10.9a1 1 0 0 0 0-1.8l-8.6-3.9a2 2 0 0 0-1.7 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.7 0zM22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5',
+    search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3',
+    gem: 'M6 3h12l4 6-10 13L2 9ZM11 3 8 9l4 13 4-13-3-6M2 9h20',
+    clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2',
+    hammer: 'm15 12-8.4 8.4a2.1 2.1 0 1 1-3-3L12 9M17.6 15 22 10.6M20.9 11.7l-1.2-1.2a2 2 0 0 1-.6-1.4V7.8l-2.3-2.3a5.5 5.5 0 0 0-4-1.6H9l.9.8a6.2 6.2 0 0 1 2 4.5v1.3l2 2h2.5a2 2 0 0 1 1.4.6l1.2 1.2',
+    message: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+    shield: 'M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1zM9 12l2 2 4-4',
+    info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-4M12 8h.01',
+    menu: 'M4 6h16M4 12h16M4 18h16',
+    x: 'M18 6 6 18M6 6l12 12',
+    plus: 'M12 5v14M5 12h14',
+    check: 'M20 6 9 17l-5-5',
+    checkCircle: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12l3 3 5-6',
+    back: 'M19 12H5M12 19l-7-7 7-7',
+    train: 'M8 3h8a4 4 0 0 1 4 4v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a4 4 0 0 1 4-4zM4 11h16M12 3v8M8 15h.01M16 15h.01M8 19l-2 3M18 22l-2-3',
+    wallet: 'M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4',
+    calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+    chart: 'M3 3v16a2 2 0 0 0 2 2h16M7 14l4-4 4 4 6-6',
+    book: 'M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z',
+    pencil: 'M4 20h16M6 20V10l6-6 6 6v10M10 20v-5h4v5',
+    university: 'M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2l9 5H3z',
+    phone: 'M7.2 3.5 9.4 8 7.8 9.6c1.1 2.3 2.9 4.1 5.2 5.2l1.6-1.6 4.5 2.2-.7 4c-.1.7-.8 1.2-1.5 1.2C9.4 20.6 3.4 14.6 3.4 7.1c0-.7.5-1.4 1.2-1.5Z',
+    home: 'M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',
+    more: 'M5 12h.01M12 12h.01M19 12h.01',
+    mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
+    file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6'
+  };
+  BP.icon = function (name, cls) {
+    return '<svg class="icon ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (P[name] || '') + '"/></svg>';
+  };
+  BP.logo = '<svg viewBox="3 13 57 41" aria-hidden="true"><path d="M5 29 19 15a2 2 0 0 1 3 0l13 13v24H7a2 2 0 0 1-2-2Z" fill="#246bfe"/><path d="m29 29 14-14 15 15v22H29Z" fill="none" stroke="#246bfe" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* ---------- photo with graceful fallback ---------- */
+  var BUILDING_ART = '<svg viewBox="0 0 120 100" fill="currentColor" aria-hidden="true"><rect x="8" y="30" width="34" height="70" rx="3"/><rect x="48" y="6" width="38" height="94" rx="3"/><rect x="92" y="44" width="24" height="56" rx="3"/></svg>';
+  BP.photo = function (a, cls) {
+    var ph = '<div class="photo-ph">' + BUILDING_ART + '<span>' + esc(a.name) + '</span></div>';
+    if (!a.image) return '<div class="photo ' + (cls || '') + '">' + ph + '</div>';
+    return '<div class="photo ' + (cls || '') + '">' + ph +
+      '<img src="' + esc(a.image) + '" alt="' + esc(a.name) + ' 전경" loading="lazy" decoding="async" onerror="this.remove()" style="position:relative">' +
+      '</div>';
+  };
+
+  /* ---------- compare tray ---------- */
+  var MAX_COMPARE = 4;
+  BP.compare = {
+    list: function () { return BP.store.get('compare', []).filter(function (id) { return byId[id]; }); },
+    has: function (id) { return BP.compare.list().indexOf(id) >= 0; },
+    toggle: function (id) {
+      var list = BP.compare.list(), i = list.indexOf(id);
+      if (i >= 0) { list.splice(i, 1); BP.toast('비교함에서 뺐어요'); }
+      else if (list.length >= MAX_COMPARE) { BP.toast('비교함에는 ' + MAX_COMPARE + '개까지 담을 수 있어요'); return false; }
+      else { list.push(id); BP.toast('비교함에 담았어요'); }
+      BP.store.set('compare', list);
+      BP.refreshTray();
+      return list.indexOf(id) >= 0;
+    },
+    set: function (ids) { BP.store.set('compare', ids.filter(function (id) { return byId[id]; }).slice(0, MAX_COMPARE)); BP.refreshTray(); },
+    clear: function () { BP.store.set('compare', []); BP.refreshTray(); }
+  };
+  BP.compareButton = function (a, round) {
+    var on = BP.compare.has(a.id);
+    if (round) {
+      return '<button type="button" class="round-toggle' + (on ? ' is-on' : '') + '" data-compare="' + esc(a.id) + '" aria-pressed="' + on + '" aria-label="' + esc(a.name) + ' 비교함에 담기">' + BP.icon(on ? 'check' : 'plus', 'sm') + '</button>';
+    }
+    return '<button type="button" class="btn btn-soft' + (on ? ' is-on' : '') + '" data-compare="' + esc(a.id) + '" aria-pressed="' + on + '">' + BP.icon(on ? 'check' : 'plus', 'sm') + '<span>' + (on ? '비교함에 담김' : '비교함에 담기') + '</span></button>';
+  };
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-compare]');
+    if (!btn) return;
+    e.preventDefault();
+    var on = BP.compare.toggle(btn.getAttribute('data-compare'));
+    document.querySelectorAll('[data-compare="' + CSS.escape(btn.getAttribute('data-compare')) + '"]').forEach(function (b) {
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on);
+      var round = b.classList.contains('round-toggle');
+      b.innerHTML = round ? BP.icon(on ? 'check' : 'plus', 'sm') : BP.icon(on ? 'check' : 'plus', 'sm') + '<span>' + (on ? '비교함에 담김' : '비교함에 담기') + '</span>';
+    });
+  });
+
+  BP.refreshTray = function () {
+    var list = BP.compare.list();
+    document.querySelectorAll('[data-compare-count]').forEach(function (el) { el.textContent = list.length || ''; });
+    var tray = document.getElementById('tray');
+    if (!tray) return;
+    var onCompare = (location.hash || '').indexOf('#/compare') === 0;
+    tray.classList.toggle('is-visible', list.length > 0 && !onCompare);
+    tray.querySelector('.tray-names').innerHTML = '<b>' + list.length + '개</b>' + list.map(esc).join(', ');
+  };
+
+  var toastTimer;
+  BP.toast = function (msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('is-visible'); }, 1800);
+  };
+
+  /* ---------- apartment picker (select element) ---------- */
+  BP.aptOptions = function (selected, opts) {
+    opts = opts || {};
+    var list = DATA.filter(opts.filter || function () { return true; });
+    return BP.areas().map(function (area) {
+      var items = list.filter(function (a) { return a.dong === area; });
+      if (!items.length) return '';
+      return '<optgroup label="' + esc(area) + '">' + items.map(function (a) {
+        return '<option value="' + esc(a.id) + '"' + (a.id === selected ? ' selected' : '') + '>' + esc(a.name) + '</option>';
+      }).join('') + '</optgroup>';
+    }).join('');
+  };
+
+  /* ---------- router ---------- */
+  BP.pages = {};
+  BP.page = function (name, def) { BP.pages[name] = def; };
+
+  BP.parseHash = function () {
+    var h = (location.hash || '#/').replace(/^#\/?/, '');
+    var qi = h.indexOf('?');
+    var path = qi >= 0 ? h.slice(0, qi) : h;
+    var query = {};
+    if (qi >= 0) h.slice(qi + 1).split('&').forEach(function (kv) {
+      if (!kv) return;
+      var p = kv.split('=');
+      query[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || '').replace(/\+/g, ' '));
+    });
+    var parts = path.split('/').filter(Boolean).map(decodeURIComponent);
+    return { name: parts[0] || 'home', params: parts.slice(1), query: query };
+  };
+  BP.go = function (hash) { location.hash = hash; };
+  BP.setQuery = function (query) {
+    var r = BP.parseHash();
+    var qs = Object.keys(query).filter(function (k) { return query[k] != null && query[k] !== ''; })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(query[k]); }).join('&');
+    var base = '#/' + [r.name].concat(r.params).map(encodeURIComponent).join('/');
+    history.replaceState(null, '', base + (qs ? '?' + qs : ''));
+  };
+
+  BP.render = function () {
+    var r = BP.parseHash();
+    var page = BP.pages[r.name] || BP.pages.notfound;
+    var view = document.getElementById('view');
+    var ctx = { params: r.params, query: r.query };
+    var holder = document.createElement('div');
+    holder.className = 'route route-' + r.name;
+    holder.innerHTML = page.render(ctx);
+    view.replaceChildren(holder);
+    document.title = (typeof page.title === 'function' ? page.title(ctx) : page.title) || '비교파트';
+    document.body.setAttribute('data-page', r.name);
+    document.querySelectorAll('[data-nav]').forEach(function (a) {
+      var names = a.getAttribute('data-nav').split(' ');
+      a.classList.toggle('is-active', names.indexOf(r.name) >= 0);
+    });
+    if (page.mount) page.mount(holder, ctx);
+    BP.closeDrawer();
+    BP.refreshTray();
+    if (!page.keepScroll) window.scrollTo(0, 0);
+    var h1 = view.querySelector('h1');
+    if (h1 && BP._rendered) { h1.setAttribute('tabindex', '-1'); h1.focus({ preventScroll: true }); }
+    BP._rendered = true;
+  };
+
+  BP.openDrawer = function () { document.body.classList.add('drawer-open'); };
+  BP.closeDrawer = function () { document.body.classList.remove('drawer-open'); };
+
+  BP.back = function (fallback) {
+    if (history.length > 1 && BP._navCount > 1) history.back();
+    else BP.go(fallback || '#/');
+  };
+  BP._navCount = 0;
+  window.addEventListener('hashchange', function () { BP._navCount++; BP.render(); });
+
+  BP.backLink = function (fallback, label) {
+    return '<button type="button" class="back-link" onclick="BP.back(\'' + (fallback || '#/') + '\')">' + BP.icon('back', 'sm') + (label || '뒤로가기') + '</button>';
+  };
+})();

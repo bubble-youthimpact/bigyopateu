@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>비교파트 지도</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #e9edf2;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .notice { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #454d5e; font-size: 15px; line-height: 1.6; }
+  .notice b { display: block; color: #151a28; font-size: 17px; margin-bottom: 6px; }
+  .notice code { background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+  .pin { width: 30px; height: 30px; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(21,26,40,.28)); transition: transform .12s ease; }
+  .pin:hover, .pin.is-active { transform: scale(1.18); }
+  .label { padding: 8px 14px; border-radius: 18px; background: #fff; box-shadow: 0 4px 14px rgba(21,26,40,.14); font-size: 13px; font-weight: 650; color: #151a28; white-space: nowrap; pointer-events: none; }
+  .cluster { padding: 10px 16px; border-radius: 999px; background: #246bfe; color: #fff; font-weight: 750; font-size: 14px; border: 2px solid #fff; box-shadow: 0 3px 10px rgba(21,26,40,.3); cursor: pointer; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="js/config.js"></script>
+<script src="js/data/apartments.js"></script>
+<script>
+(function () {
+  var CONFIG = window.BIGYO_CONFIG || {};
+  var ALL = ((window.BIGYO_DATA && window.BIGYO_DATA.apartments) || []).filter(function (a) { return a.lat && a.lng; });
+  var embedded = window.parent !== window;
+  var CLICK_ZOOM = 15, CLUSTER_BELOW = 14;
+  var map, info, markers = [], data = ALL.slice();
+  var params = new URLSearchParams(location.search);
+  var focusArea = params.get('area');
+  var leftInset = parseInt(params.get('inset') || '0', 10);
+
+  function notice(title, body) {
+    document.getElementById('map').innerHTML = '<div class="notice"><div><b>' + title + '</b>' + body + '</div></div>';
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function open(id) {
+    if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'open', id: id }, '*');
+    else location.href = 'index.html#/apt/' + encodeURIComponent(id);
+  }
+
+  var PIN = '<svg class="pin" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 13.2 15 3l11 10.2V26a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 4 26Z" fill="#246bfe" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><rect x="12.2" y="17" width="5.6" height="10.5" rx="1" fill="#fff"/></svg>';
+
+  function clear() {
+    if (info) info.close();
+    markers.forEach(function (m) { m.setMap(null); });
+    markers = [];
+  }
+
+  function draw() {
+    clear();
+    if (!data.length) return;
+    if (map.getZoom() < CLUSTER_BELOW) {
+      // one bubble per area, like the Bubble version but split by 동
+      var groups = {};
+      data.forEach(function (a) { (groups[a.dong || ''] = groups[a.dong || ''] || []).push(a); });
+      Object.keys(groups).forEach(function (area) {
+        var g = groups[area], lat = 0, lng = 0;
+        g.forEach(function (a) { lat += a.lat; lng += a.lng; });
+        var pos = new naver.maps.LatLng(lat / g.length, lng / g.length);
+        var m = new naver.maps.Marker({ position: pos, map: map, icon: { content: '<div class="cluster">' + esc(area) + ' ' + g.length + '</div>', anchor: new naver.maps.Point(40, 20) } });
+        naver.maps.Event.addListener(m, 'click', function () { map.setCenter(pos); map.setZoom(CLICK_ZOOM, true); });
+        markers.push(m);
+      });
+      return;
+    }
+    data.forEach(function (a) {
+      var m = new naver.maps.Marker({
+        position: new naver.maps.LatLng(a.lat, a.lng), map: map, title: a.name,
+        icon: { content: PIN, size: new naver.maps.Size(30, 30), anchor: new naver.maps.Point(15, 30) }
+      });
+      naver.maps.Event.addListener(m, 'mouseover', function () {
+        info.setContent('<div class="label">' + esc(a.name) + '</div>');
+        info.open(map, m);
+      });
+      naver.maps.Event.addListener(m, 'mouseout', function () { info.close(); });
+      naver.maps.Event.addListener(m, 'click', function () { open(a.id); });
+      markers.push(m);
+    });
+  }
+
+  function fit(list) {
+    if (!list.length) return;
+    var b = new naver.maps.LatLngBounds();
+    list.forEach(function (a) { b.extend(new naver.maps.LatLng(a.lat, a.lng)); });
+    map.fitBounds(b, { top: 60, right: 40, bottom: 60, left: 40 + leftInset });
+    if (map.getZoom() > 16) map.setZoom(16);
+  }
+
+  // Filters from the page that embeds this map
+  window.addEventListener('message', function (e) {
+    var msg = e.data || {};
+    if (msg.source !== 'bigyo-app' || !map) return;
+    if (msg.type === 'filter') {
+      var keys = msg.amenities || [];
+      data = ALL.filter(function (a) {
+        return (!msg.area || a.dong === msg.area) && keys.every(function (k) { return a[k] === true; });
+      });
+      draw();
+      if (msg.fit) fit(data);
+      window.parent.postMessage({ source: 'bigyo-map', type: 'count', count: data.length }, '*');
+    }
+  });
+
+  window.navermap_authFailure = function () {
+    notice('지도 인증에 실패했어요', 'NAVER Cloud 콘솔에서 이 주소(<code>' + esc(location.origin) + '</code>)를<br>Web 서비스 URL로 등록해 주세요.');
+  };
+
+  if (!CONFIG.naverMapClientId) {
+    notice('지도를 불러올 수 없어요', '<code>js/config.js</code>에 네이버 지도 Client ID를 넣어 주세요.');
+    return;
+  }
+
+  var s = document.createElement('script');
+  s.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?' + (CONFIG.naverMapKeyParam || 'ncpKeyId') + '=' + encodeURIComponent(CONFIG.naverMapClientId);
+  s.onerror = function () { notice('지도를 불러올 수 없어요', '인터넷 연결을 확인한 뒤 다시 시도해 주세요.'); };
+  s.onload = function () {
+    if (!window.naver || !naver.maps) return;
+    map = new naver.maps.Map('map', {
+      center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
+      zoomControl: false, scaleControl: false, mapDataControl: false, logoControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT }
+    });
+    info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(0, -10) });
+    naver.maps.Event.addListener(map, 'zoom_changed', draw);
+    naver.maps.Event.addListener(map, 'click', function () { info.close(); });
+    window.addEventListener('resize', function () { map.autoResize(); });
+
+    var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL.filter(function (a) { return a.dong === (ALL[0] && ALL[0].dong); });
+    fit(first.length ? first : ALL);
+    draw();
+    if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
+  };
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
