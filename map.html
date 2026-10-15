@@ -7,9 +7,12 @@
 <style>
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #e9edf2;
     font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
-  #map { position: absolute; inset: 0; }
-  .notice { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #454d5e; font-size: 15px; line-height: 1.6; }
+  /* Same as the working Bubble code: an explicit full-size box. Naver resets the box's
+     positioning when the map starts, so sizing by position alone collapses it to 0px tall. */
+  #map { position: relative; width: 100%; height: 100%; }
+  .notice { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 24px; text-align: center; color: #454d5e; font-size: 15px; line-height: 1.6; }
   .notice b { display: block; color: #151a28; font-size: 17px; margin-bottom: 6px; }
+  .notice small { display: inline-block; margin-top: 8px; color: #7c859b; font-size: 12px; }
   .notice code { background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
   .pin { width: 30px; height: 30px; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(21,26,40,.28)); transition: transform .12s ease; }
   .pin:hover, .pin.is-active { transform: scale(1.18); }
@@ -18,7 +21,7 @@
 </style>
 </head>
 <body>
-<div id="map"></div>
+<div id="map"><div class="notice" id="map-loading"><div><b>지도를 불러오는 중…</b>잠시만 기다려 주세요.</div></div></div>
 <script src="js/config.js"></script>
 <script src="js/data/apartments.js"></script>
 <script>
@@ -117,7 +120,7 @@
   });
 
   window.navermap_authFailure = function () {
-    notice('지도 인증에 실패했어요', 'NAVER Cloud 콘솔에서 이 주소(<code>' + esc(location.origin) + '</code>)를<br>Web 서비스 URL로 등록해 주세요.');
+    notice('지도 인증에 실패했어요', 'NAVER Cloud 콘솔에서 이 주소(<code>' + esc(location.origin) + '</code>)를<br>Web 서비스 URL로 등록해 주세요.<br><small>코드: AUTH</small>');
   };
 
   if (!CONFIG.naverMapClientId) {
@@ -127,6 +130,8 @@
 
   function start() {
     try {
+      var loading = document.getElementById('map-loading');
+      if (loading) loading.remove();
       map = new naver.maps.Map('map', {
         center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
         zoomControl: false, scaleControl: false, mapDataControl: false
@@ -141,14 +146,17 @@
       draw();
       if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
     } catch (err) {
-      notice('지도를 그리는 중 문제가 생겼어요', esc(String(err && err.message || err)));
+      notice('지도를 그리는 중 문제가 생겼어요', esc(String(err && err.message || err)) + '<br><small>코드: DRAW</small>');
     }
   }
 
   var tries = 0;
   (function waitForNaver() {
     if (window.naver && naver.maps && naver.maps.Map && naver.maps.LatLng) return start();
-    if (++tries > 120) return notice('지도를 불러올 수 없어요', '네이버 지도가 응답하지 않아요. 광고 차단 확장 프로그램을 끄거나 새로고침해 보세요.');
+    if (++tries > 80) {
+      var code = !window.naver ? 'NO_SCRIPT' : !naver.maps ? 'NO_MAPS' : 'NO_MAP_CLASS';
+      return notice('지도를 불러올 수 없어요', '네이버 지도가 응답하지 않아요. 광고 차단 확장 프로그램을 끄거나 새로고침해 보세요.<br><small>코드: ' + code + '</small>');
+    }
     setTimeout(waitForNaver, 100);
   })();
 })();
