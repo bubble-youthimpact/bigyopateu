@@ -624,8 +624,10 @@ body[data-page="home"] .topline { display: none; }
   .tabbar .is-active .icon { color: var(--blue); }
   .tabbar .badge { position: absolute; top: 8px; left: 50%; margin-left: 6px; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px; background: var(--blue); color: #fff; font-size: .66rem; display: grid; place-items: center; }
   .tabbar .badge:empty { display: none; }
-  .app-footer .inner { padding-bottom: calc(30px + var(--tabbar-h) + var(--safe-b)); }
-  .page { padding-top: 4px; padding-bottom: 116px; }
+  /* Bottom tab bar replaces the footer on phones (privacy link stays in the menu) */
+  .app-footer { display: none; }
+  .page { padding-top: 4px; padding-bottom: calc(116px + var(--safe-b)); }
+  .team { padding-bottom: calc(var(--tabbar-h) + var(--safe-b)); }
   .panel { padding: 20px; border-radius: 16px; }
   .page-head { margin-bottom: 20px; }
   .apt-grid, .tool-grid, .value-results, .fraud-grid, .response-grid, .support-strip, .form-grid, .why-grid, .criteria-grid, .feature-grid, .commute-layout, .detail-grid, .score-pair, .kv-2col { grid-template-columns: minmax(0, 1fr); }
