@@ -6,13 +6,19 @@
   function mapSrc() {
     var base = (BP.inApp && BP.config.siteUrl) ? BP.config.siteUrl.replace(/\/?$/, '/') : '';
     var inset = window.innerWidth > 760 ? 0 : 0;
-    return base + 'map.html?inset=' + inset;
+    var v = (window.BIGYO_DATA && window.BIGYO_DATA.generatedAt) || '';
+    return base + 'map.html?inset=' + inset + '&v=' + encodeURIComponent(v);
   }
 
   function sendFilter(fit) {
     var frame = document.getElementById('map-frame');
     if (!frame || !frame.contentWindow) return;
     frame.contentWindow.postMessage({ source: 'bigyo-app', type: 'filter', amenities: state.amenities, area: state.area, fit: !!fit }, '*');
+  }
+
+  function sendCompare() {
+    var frame = document.getElementById('map-frame');
+    if (frame && frame.contentWindow) frame.contentWindow.postMessage({ source: 'bigyo-app', type: 'compare-state', ids: BP.compare.list() }, '*');
   }
 
   function count() {
@@ -25,7 +31,8 @@
     var msg = e.data || {};
     if (msg.source !== 'bigyo-map') return;
     if (msg.type === 'open' && BP.get(msg.id)) BP.go(BP.aptUrl(BP.get(msg.id)));
-    if (msg.type === 'ready') sendFilter(false);
+    if (msg.type === 'ready') { sendFilter(false); sendCompare(); }
+    if (msg.type === 'compare' && BP.get(msg.id)) { BP.compare.toggle(msg.id); sendCompare(); }
   });
 
   function amenityChips() {

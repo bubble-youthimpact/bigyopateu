@@ -14,8 +14,28 @@
   .notice b { display: block; color: #151a28; font-size: 17px; margin-bottom: 6px; }
   .notice small { display: inline-block; margin-top: 8px; color: #7c859b; font-size: 12px; }
   .notice code { background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
-  .pin { width: 30px; height: 30px; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(21,26,40,.28)); transition: transform .12s ease; }
-  .pin:hover, .pin.is-active { transform: scale(1.18); }
+  @font-face { font-family: "Pretendard Variable"; font-weight: 45 920; font-display: swap; src: url("fonts/PretendardVariable-subset.woff2") format("woff2"); }
+  .pin { display: block; width: 30px; height: 34px; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(21,26,40,.3)); transform-origin: 2px 34px; transition: transform .12s ease; }
+  .pin:hover, .pin.is-active { transform: scale(1.22); }
+  .pop { position: relative; width: 264px; background: #fff; border-radius: 16px; box-shadow: 0 14px 36px rgba(14,27,63,.24); color: #121a2e; letter-spacing: -0.01em; }
+  .pop-photo { height: 132px; background: #e8f0ff; border-radius: 16px 16px 0 0; overflow: hidden; }
+  .pop-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pop-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(255,255,255,.95); color: #0e1b3f; font-size: 18px; line-height: 30px; cursor: pointer; box-shadow: 0 2px 8px rgba(14,27,63,.2); }
+  .pop-body { padding: 14px 16px 16px; }
+  .pop-body small { display: block; color: #7c859b; font-size: 12px; font-weight: 650; }
+  .pop-body strong { display: block; margin-top: 1px; font-size: 18px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.3; }
+  .pop-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 12px 0 14px; border-top: 1px solid #eceef3; border-bottom: 1px solid #eceef3; }
+  .pop-stats div { padding: 9px 0; text-align: center; }
+  .pop-stats div + div { border-left: 1px solid #eceef3; }
+  .pop-stats dt { font-size: 11px; color: #7c859b; }
+  .pop-stats dd { margin: 1px 0 0; font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pop-actions { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  .pop-actions button { min-height: 40px; border-radius: 11px; border: 0; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .pop-open { background: #246bfe; color: #fff; }
+  .pop-open:hover { background: #1452db; }
+  .pop-cmp { padding: 0 12px; background: #e8f0ff; color: #246bfe; }
+  .pop-cmp.is-on { background: #0e1b3f; color: #fff; }
+  .pop-tail { position: absolute; z-index: -1; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: #fff; transform: rotate(45deg); box-shadow: 4px 4px 8px rgba(14,27,63,.08); }
   .label { padding: 8px 14px; border-radius: 18px; background: #fff; box-shadow: 0 4px 14px rgba(21,26,40,.14); font-size: 13px; font-weight: 650; color: #151a28; white-space: nowrap; pointer-events: none; }
   .cluster { padding: 10px 16px; border-radius: 999px; background: #246bfe; color: #fff; font-weight: 750; font-size: 14px; border: 2px solid #fff; box-shadow: 0 3px 10px rgba(21,26,40,.3); cursor: pointer; white-space: nowrap; }
 </style>
@@ -39,8 +59,8 @@
   var CONFIG = window.BIGYO_CONFIG || {};
   var ALL = ((window.BIGYO_DATA && window.BIGYO_DATA.apartments) || []).filter(function (a) { return a.lat && a.lng; });
   var embedded = window.parent !== window;
-  var CLICK_ZOOM = 15, CLUSTER_BELOW = 14;
-  var map, info, markers = [], data = ALL.slice();
+  var CLICK_ZOOM = 15, CLUSTER_BELOW = 12;
+  var map, info, popup, popupId = null, markers = [], data = ALL.slice(), compared = [];
   var params = new URLSearchParams(location.search);
   var focusArea = params.get('area');
   var leftInset = parseInt(params.get('inset') || '0', 10);
@@ -56,10 +76,49 @@
     else location.href = 'index.html#/apt/' + encodeURIComponent(id);
   }
 
-  var PIN = '<svg class="pin" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 13.2 15 3l11 10.2V26a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 4 26Z" fill="#246bfe" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><rect x="12.2" y="17" width="5.6" height="10.5" rx="1" fill="#fff"/></svg>';
+  // Marker: the house speech-bubble image; its tail tip (bottom-left) points at the apartment
+  var PIN = '<img class="pin" src="images/marker.png" alt="" width="30" height="34">';
+
+  function closePopup() { if (popup) popup.close(); popupId = null; }
+
+  function popupContent(a) {
+    var el = document.createElement('div');
+    el.className = 'pop';
+    var on = compared.indexOf(a.id) >= 0;
+    el.innerHTML =
+      '<button type="button" class="pop-x" aria-label="닫기">×</button>' +
+      (a.image ? '<div class="pop-photo"><img src="' + esc(a.image) + '" alt=""></div>' : '') +
+      '<div class="pop-body"><small>' + esc(a.dong || '') + (a.builder ? ' · ' + esc(a.builder) : '') + '</small><strong>' + esc(a.name) + '</strong>' +
+        '<dl class="pop-stats">' +
+          '<div><dt>세대수</dt><dd>' + (a.households ? a.households.toLocaleString('ko-KR') : '-') + '</dd></div>' +
+          '<div><dt>동수</dt><dd>' + (a.buildings ? a.buildings + '개동' : '-') + '</dd></div>' +
+          '<div><dt>준공</dt><dd>' + (a.approvedYear || '-') + '</dd></div>' +
+          '<div><dt>역 도보</dt><dd>' + (a.subwayMin != null ? a.subwayMin + '분' : '-') + '</dd></div>' +
+        '</dl>' +
+        '<div class="pop-actions"><button type="button" class="pop-open">상세 정보 보기</button>' +
+          (embedded ? '<button type="button" class="pop-cmp' + (on ? ' is-on' : '') + '">' + (on ? '✓ 담김' : '+ 비교') + '</button>' : '') +
+        '</div>' +
+      '</div><span class="pop-tail"></span>';
+    var img = el.querySelector('.pop-photo img');
+    if (img) img.onerror = function () { img.parentNode.remove(); };
+    el.querySelector('.pop-x').onclick = function (e) { e.stopPropagation(); closePopup(); };
+    el.querySelector('.pop-open').onclick = function (e) { e.stopPropagation(); open(a.id); };
+    var cmp = el.querySelector('.pop-cmp');
+    if (cmp) cmp.onclick = function (e) { e.stopPropagation(); window.parent.postMessage({ source: 'bigyo-map', type: 'compare', id: a.id }, '*'); };
+    return el;
+  }
+
+  function showPopup(a, marker) {
+    info.close();
+    popupId = a.id;
+    popup.setContent(popupContent(a));
+    popup.open(map, marker);
+    try { map.panTo(marker.getPosition()); setTimeout(function () { map.panBy(new naver.maps.Point(0, -140)); }, 320); } catch (e) {}
+  }
 
   function clear() {
     if (info) info.close();
+    closePopup();
     markers.forEach(function (m) { m.setMap(null); });
     markers = [];
   }
@@ -84,14 +143,15 @@
     data.forEach(function (a) {
       var m = new naver.maps.Marker({
         position: new naver.maps.LatLng(a.lat, a.lng), map: map, title: a.name,
-        icon: { content: PIN, size: new naver.maps.Size(30, 30), anchor: new naver.maps.Point(15, 30) }
+        icon: { content: PIN, size: new naver.maps.Size(30, 34), anchor: new naver.maps.Point(2, 34) }
       });
       naver.maps.Event.addListener(m, 'mouseover', function () {
+        if (popupId === a.id) return;
         info.setContent('<div class="label">' + esc(a.name) + '</div>');
         info.open(map, m);
       });
       naver.maps.Event.addListener(m, 'mouseout', function () { info.close(); });
-      naver.maps.Event.addListener(m, 'click', function () { open(a.id); });
+      naver.maps.Event.addListener(m, 'click', function () { showPopup(a, m); });
       markers.push(m);
     });
   }
@@ -107,7 +167,14 @@
   // Filters from the page that embeds this map
   window.addEventListener('message', function (e) {
     var msg = e.data || {};
-    if (msg.source !== 'bigyo-app' || !map) return;
+    if (msg.source !== 'bigyo-app') return;
+    if (msg.type === 'compare-state') {
+      compared = msg.ids || [];
+      var btn = document.querySelector('.pop-cmp');
+      if (btn && popupId) { var on = compared.indexOf(popupId) >= 0; btn.classList.toggle('is-on', on); btn.textContent = on ? '✓ 담김' : '+ 비교'; }
+      return;
+    }
+    if (!map) return;
     if (msg.type === 'filter') {
       var keys = msg.amenities || [];
       data = ALL.filter(function (a) {
@@ -136,13 +203,16 @@
         center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
         zoomControl: false, scaleControl: false, mapDataControl: false
       });
-      info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(0, -10) });
+      info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(14, -40) });
+      popup = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(14, -46) });
       naver.maps.Event.addListener(map, 'zoom_changed', draw);
-      naver.maps.Event.addListener(map, 'click', function () { info.close(); });
+      naver.maps.Event.addListener(map, 'click', function () { info.close(); closePopup(); });
       window.addEventListener('resize', function () { map.autoResize(); });
 
-      var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL.filter(function (a) { return a.dong === (ALL[0] && ALL[0].dong); });
+      // Start zoomed out, centred on every apartment (or one area if the page asks for it)
+      var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL;
       fit(first.length ? first : ALL);
+      if (!focusArea && map.getZoom() > 13) map.setZoom(13);
       draw();
       if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
     } catch (err) {
