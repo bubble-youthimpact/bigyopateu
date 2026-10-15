@@ -4,15 +4,15 @@
   var esc = BP.esc;
 
   var FEATURES = [
-    ['주요 업무지구 접근성', '강남, 여의도, 광화문 등 일자리 지역과 가까운지'],
-    ['학군·학원가 접근성', '학교, 학원, 도서관 등 교육 인프라가 괜찮은지'],
-    ['초등/중/고등학교 도보권', '자녀가 있는 가족에게 특히 중요한 실거주 가치'],
-    ['대단지 또는 안정적인 세대 수', '세대 수가 많아 관리, 커뮤니티, 거래량 측면에서 유리한지'],
-    ['관리비가 낮은 단지', '실제 거주 비용이 낮아 오래 살기에 부담이 적은지'],
-    ['주차 편의성', '세대당 주차대수가 충분하거나 주차 스트레스가 적은지'],
-    ['공원·산책로 접근성', '쾌적한 주거 환경과 삶의 질을 높이는 요소'],
-    ['생활 편의시설 접근성', '마트, 병원, 약국, 카페, 쇼핑몰 등 일상생활 인프라가 가까운지'],
-    ['브랜드는 약하지만 입지가 좋은 단지', '유명 브랜드가 아니라서 저평가됐지만 실제 위치가 좋은 경우']
+    ['주요 업무지구 접근성', '강남, 여의도, 광화문 등 일자리 지역과 가까운지', 'building'],
+    ['학군·학원가 접근성', '학교, 학원, 도서관 등 교육 인프라가 괜찮은지', 'school'],
+    ['초등/중/고등학교 도보권', '자녀가 있는 가족에게 특히 중요한 실거주 가치', 'pencil'],
+    ['대단지 또는 안정적인 세대 수', '세대 수가 많아 관리, 커뮤니티, 거래량 측면에서 유리한지', 'tools'],
+    ['관리비가 낮은 단지', '실제 거주 비용이 낮아 오래 살기에 부담이 적은지', 'wallet'],
+    ['주차 편의성', '세대당 주차대수가 충분하거나 주차 스트레스가 적은지', 'car'],
+    ['공원·산책로 접근성', '쾌적한 주거 환경과 삶의 질을 높이는 요소', 'tree'],
+    ['생활 편의시설 접근성', '마트, 병원, 약국, 카페, 쇼핑몰 등 일상생활 인프라가 가까운지', 'store'],
+    ['브랜드는 약하지만 입지가 좋은 단지', '유명 브랜드가 아니라서 저평가됐지만 실제 위치가 좋은 경우', 'gem']
   ];
 
   function areas() {
@@ -84,33 +84,54 @@
 
       var sel = (ctx.query.sel || '').split('|');
       return '<div class="page">' + BP.backLink('#/tools') +
-        '<form class="panel" data-form>' +
-          '<div class="page-head" style="margin-bottom:22px"><div><h1>저평가 아파트를 찾아보세요</h1><p>원하는 조건을 고르면 알짜배기 아파트를 비교파트가 찾아드려요.</p></div></div>' +
-          '<label class="field" style="margin-bottom:24px"><span>지역</span><select class="select" name="area">' + list.map(function (a) {
-            return '<option' + (a === area ? ' selected' : '') + '>' + esc(a) + '</option>';
-          }).join('') + '</select></label>' +
-          '<fieldset style="border:0;padding:0;margin:0"><legend style="font-weight:700;margin-bottom:10px;padding:0">아파트 특징 <span class="muted" style="font-weight:500">(원하는 항목을 모두 고르세요)</span></legend>' +
-          '<div class="feature-grid">' + FEATURES.map(function (f) {
-            return '<label class="feature"><input type="checkbox" name="f" value="' + esc(f[0]) + '"' + (sel.indexOf(f[0]) >= 0 ? ' checked' : '') + '><span><strong>' + f[0] + '</strong><small>' + f[1] + '</small></span></label>';
-          }).join('') + '</div></fieldset>' +
-          '<button class="btn btn-primary btn-block" type="submit" style="margin-top:24px" data-submit>찾아보기</button>' +
-          '<p class="hint" style="text-align:center;margin:10px 0 0" data-help>항목을 1개 이상 골라 주세요</p>' +
+        '<form class="vf" data-form>' +
+          '<aside class="vf-side">' +
+            '<h1>저평가 아파트를 찾아보세요</h1>' +
+            '<p class="vf-lede">원하는 조건을 고르면 그 조건을 모두 갖춘 알짜배기 단지를 비교파트가 찾아드려요.</p>' +
+            '<fieldset class="vf-areas"><legend>지역</legend><div class="chip-row">' + list.map(function (a, i) {
+              return '<label class="vf-area"><input type="radio" name="area" value="' + esc(a) + '"' + (a === area ? ' checked' : '') + '><span>' + esc(a) + '</span></label>';
+            }).join('') + '</div></fieldset>' +
+            '<div class="vf-live" aria-live="polite"><small data-live-label></small><strong><b data-live-count>0</b>개 단지</strong></div>' +
+            '<div class="vf-picked" data-picked></div>' +
+            '<button class="btn btn-primary btn-block vf-submit" type="submit" data-submit>' + BP.icon('search', 'sm') + '조건에 맞는 단지 보기</button>' +
+          '</aside>' +
+          '<section class="vf-main">' +
+            '<div class="vf-main-head"><h2>원하는 특징을 모두 고르세요</h2><button type="button" class="vf-clear" data-clear>모두 해제</button></div>' +
+            '<div class="vf-grid">' + FEATURES.map(function (f, i) {
+              return '<label class="vf-feature"><input type="checkbox" name="f" value="' + esc(f[0]) + '"' + (sel.indexOf(f[0]) >= 0 ? ' checked' : '') + '>' +
+                '<span class="vf-icon">' + BP.icon(f[2]) + '</span>' +
+                '<span class="vf-text"><strong>' + f[0] + '</strong><small>' + f[1] + '</small></span>' +
+                '<span class="vf-check" aria-hidden="true">' + BP.icon('check', 'sm') + '</span></label>';
+            }).join('') + '</div>' +
+            '<button class="btn btn-primary btn-block vf-submit-m" type="submit" data-submit>' + BP.icon('search', 'sm') + '조건에 맞는 단지 보기</button>' +
+          '</section>' +
         '</form></div>';
     },
     mount: function (root) {
       var form = root.querySelector('[data-form]');
       if (!form) return;
+      function picked() { return Array.prototype.map.call(form.querySelectorAll('input[name=f]:checked'), function (i) { return i.value; }); }
+      function area() { var r = form.querySelector('input[name=area]:checked'); return r ? r.value : ''; }
       function sync() {
-        var n = form.querySelectorAll('input[name=f]:checked').length;
-        form.querySelector('[data-submit]').disabled = !n;
-        form.querySelector('[data-help]').textContent = n ? n + '개 조건을 모두 갖춘 단지를 찾아요' : '항목을 1개 이상 골라 주세요';
+        var f = picked(), ar = area();
+        var pool = BP.inArea(ar).filter(function (a) { return a.valueScore != null; });
+        var hits = pool.filter(function (a) { return f.every(function (x) { return (a.valueFeatures || []).indexOf(x) >= 0; }); });
+        form.querySelector('[data-live-label]').textContent = f.length ? ar + '에서 조건을 모두 갖춘' : ar + '의 분석 대상';
+        form.querySelector('[data-live-count]').textContent = hits.length;
+        form.querySelector('[data-picked]').innerHTML = f.length
+          ? f.map(function (x) { return '<span class="chip">' + esc(x) + '</span>'; }).join('')
+          : '<p>오른쪽에서 특징을 1개 이상 골라 주세요.</p>';
+        form.querySelectorAll('[data-submit]').forEach(function (b) { b.disabled = !f.length; });
       }
       form.addEventListener('change', sync);
+      form.querySelector('[data-clear]').addEventListener('click', function () {
+        form.querySelectorAll('input[name=f]').forEach(function (i) { i.checked = false; });
+        sync();
+      });
       sync();
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        var f = Array.prototype.map.call(form.querySelectorAll('input[name=f]:checked'), function (i) { return i.value; });
-        BP.go('#/value?area=' + encodeURIComponent(form.area.value) + '&f=' + encodeURIComponent(f.join('|')));
+        BP.go('#/value?area=' + encodeURIComponent(area()) + '&f=' + encodeURIComponent(picked().join('|')));
       });
     }
   });

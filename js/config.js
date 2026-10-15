@@ -19,6 +19,12 @@ window.BIGYO_CONFIG = {
   // Where 안심거래센터 consultation requests and privacy questions are sent.
   contactEmail: "",
 
+  // 1:1 상담 form is delivered by FormSubmit (https://formsubmit.co) to this inbox.
+  // The very first request sends an activation email here — click "Activate Form" once.
+  // After activating, FormSubmit gives you a random string; you can paste it here
+  // instead of the address so the email isn't visible in the site's code.
+  formSubmitEmail: "bubble.youthimpact@gmail.com",
+
   // 1:1 상담 partner lawyer (shown on 안심거래센터)
   lawyer: {
     name: "차형진",

@@ -114,11 +114,13 @@
           '<label class="field"><span>현재 단계</span><select class="select" name="stage" required><option value="">선택해 주세요</option><option>계약 전</option><option>계약금 지급</option><option>잔금 지급</option><option>입주 후</option><option>보증금 미반환</option><option>경매·공매 진행</option></select></label>' +
           '<label class="field"><span>긴급도</span><select class="select" name="urgency"><option>일반</option><option>빠른 확인 필요</option><option>기한이 임박함</option></select></label>' +
           '<label class="field full"><span>문의 내용</span><textarea class="textarea" name="message" rows="6" required placeholder="계약 시점, 지급한 금액, 현재 문제가 된 상황을 시간 순서대로 작성해 주세요."></textarea></label>' +
-          '<label class="field full"><span>답변 받을 연락처</span><input class="input" name="contact" required placeholder="이메일 또는 전화번호"></label>' +
+          '<label class="field"><span>이름</span><input class="input" name="name" required autocomplete="name" placeholder="홍길동"></label>' +
+          '<label class="field"><span>답변 받을 연락처</span><input class="input" name="contact" required autocomplete="email" placeholder="이메일 또는 전화번호"></label>' +
+          '<input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
         '</div>' +
-        '<p class="privacy-note">주민등록번호, 계좌 비밀번호, 인증번호 등 불필요한 개인정보는 적지 마세요. 자료 파일은 메일 앱에서 직접 첨부할 수 있어요.</p>' +
+        '<p class="privacy-note">주민등록번호, 계좌 비밀번호, 인증번호 등 불필요한 개인정보는 적지 마세요. 자료가 있다면 답변 메일에 회신으로 보내 주세요.</p>' +
         '<label class="consent"><input type="checkbox" required><span>개인정보 수집 및 이용(<a href="privacy.html">개인정보처리방침</a>)에 동의하며, 상담 요청이 공식적인 사건 수임을 의미하지 않음을 확인합니다.</span></label>' +
-        '<div class="form-actions"><button class="btn btn-primary" type="submit">' + BP.icon('mail', 'sm') + '메일로 상담 요청하기</button><span class="form-status" aria-live="polite" data-status></span></div>' +
+        '<div class="form-actions"><button class="btn btn-primary" type="submit" data-send>' + BP.icon('send', 'sm') + '상담 요청 보내기</button><span class="form-status" role="status" aria-live="polite" data-status></span></div>' +
       '</form>';
   }
 
@@ -177,11 +179,44 @@
         var form = e.target.closest('[data-consult]'); if (!form) return;
         e.preventDefault();
         var status = form.querySelector('[data-status]');
-        var to = BP.config.contactEmail;
-        if (!to) { status.textContent = '상담 메일 주소가 아직 설정되지 않았어요. 위의 전화번호로 문의해 주세요.'; return; }
-        var body = ['거래 유형: ' + form.dealType.value, '현재 단계: ' + form.stage.value, '긴급도: ' + form.urgency.value, '연락처: ' + form.contact.value, '', form.message.value].join('\n');
-        location.href = 'mailto:' + to + '?subject=' + encodeURIComponent('[비교파트 상담] ' + form.title.value) + '&body=' + encodeURIComponent(body);
-        status.textContent = '메일 앱에서 내용을 확인한 뒤 보내 주세요.';
+        var button = form.querySelector('[data-send]');
+        var to = BP.config.formSubmitEmail;
+        if (form._honey.value) return;                        // spam bot filled the hidden field
+        if (!to) { status.textContent = '상담 접수 주소가 아직 설정되지 않았어요. 위의 전화번호로 문의해 주세요.'; return; }
+
+        var payload = {
+          _subject: '[비교파트 상담] ' + form.title.value,
+          _template: 'table',
+          _captcha: 'false',
+          '이름': form.name.value,
+          '연락처': form.contact.value,
+          '상담 제목': form.title.value,
+          '거래 유형': form.dealType.value,
+          '현재 단계': form.stage.value,
+          '긴급도': form.urgency.value,
+          '문의 내용': form.message.value
+        };
+        if (/@/.test(form.contact.value)) payload._replyto = form.contact.value.trim();
+
+        button.disabled = true;
+        status.className = 'form-status';
+        status.textContent = '보내는 중이에요…';
+        fetch('https://formsubmit.co/ajax/' + encodeURIComponent(to), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (r) {
+            if (!r.ok || String(r.data.success) === 'false') throw new Error(r.data.message || 'send failed');
+            form.reset();
+            status.className = 'form-status is-done';
+            status.textContent = '상담 요청을 보냈어요. 남겨 주신 연락처로 답변드릴게요.';
+          })
+          .catch(function () {
+            status.className = 'form-status is-error';
+            status.textContent = '요청을 보내지 못했어요. 인터넷 연결을 확인하고 다시 시도하거나 위의 전화번호로 문의해 주세요.';
+          })
+          .then(function () { button.disabled = false; });
       });
     },
     _rerender: function (root) {

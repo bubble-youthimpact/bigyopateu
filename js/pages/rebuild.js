@@ -128,7 +128,7 @@
       var all = apts.map(function (a) { return scores(a, salary); });
       all.salary = salary;
 
-      return '<div class="page">' + BP.backLink('#/rebuild', '처음으로') +
+      return '<div class="page">' + '<a class="back-link" href="#/rebuild">' + BP.icon('back', 'sm') + '처음으로</a>' +
         '<div class="page-head"><div><h1>재건축 가능성 비교</h1><p>여섯 가지 기준을 1~5점으로 매겨 더했어요. 점수가 높을수록 재건축 가능성이 높아요.</p></div>' + picker + '</div>' +
         '<div class="rb-cards" style="--n:' + apts.length + '">' + apts.map(function (a, i) { return summaryCard(a, all[i]); }).join('') + '</div>' +
         '<form class="salary-strip" data-salary>' +

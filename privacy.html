@@ -40,11 +40,11 @@
     <table>
       <thead><tr><th>구분</th><th>항목</th><th>목적</th><th>보유 기간</th></tr></thead>
       <tbody>
-        <tr><td>안심거래센터 1:1 상담 요청 (이메일)</td><td>이메일 주소 또는 전화번호, 상담 제목, 거래 유형, 진행 단계, 문의 내용, 이용자가 직접 첨부한 자료</td><td>상담 가능 여부 안내와 답변</td><td>상담 종료 후 1년이 지나면 파기 (법령에 따라 보존이 필요한 경우 그 기간)</td></tr>
+        <tr><td>안심거래센터 1:1 상담 요청</td><td>이름, 이메일 주소 또는 전화번호, 상담 제목, 거래 유형, 진행 단계, 긴급도, 문의 내용</td><td>상담 가능 여부 안내와 답변</td><td>상담 종료 후 1년이 지나면 파기 (법령에 따라 보존이 필요한 경우 그 기간)</td></tr>
         <tr><td>개인정보 관련 문의</td><td>이메일 주소, 문의 내용</td><td>문의 답변과 처리 기록</td><td>처리 완료 후 1년</td></tr>
       </tbody>
     </table>
-    <p>상담 요청은 이용자 기기의 메일 앱을 통해 이용자가 직접 보내는 방식이며, 비교파트 서버에 따로 저장되지 않습니다. 주민등록번호, 계좌 비밀번호, 인증번호 등은 보내지 마세요.</p>
+    <p>상담 요청 양식에 입력한 내용은 양식 전송 서비스 FormSubmit을 거쳐 비교파트 담당자의 이메일로 전달되며, 비교파트는 별도의 서버에 저장하지 않습니다. 주민등록번호, 계좌 비밀번호, 인증번호 등은 입력하지 마세요.</p>
 
     <h2>2. 이용자 기기에만 저장되는 정보</h2>
     <p>다음 정보는 이용자의 브라우저 또는 앱 저장공간(localStorage)에만 저장되고 비교파트로 전송되지 않습니다. 브라우저 데이터를 지우거나 앱을 삭제하면 함께 사라집니다.</p>
@@ -56,13 +56,13 @@
     <h2>3. 개인정보의 제3자 제공</h2>
     <p>비교파트는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 다만 1:1 상담 요청 시 이용자가 동의한 경우, 상담을 위해 협력 법률 전문가(법무법인 온전)에게 상담 내용과 연락처를 전달할 수 있습니다. 협력 변호사에게 직접 전화하는 경우 통화 내용은 비교파트가 처리하지 않습니다.</p>
 
-    <h2>4. 외부 서비스 이용</h2>
+    <h2>4. 외부 서비스 이용 및 처리 위탁</h2>
     <p>서비스 화면을 보여주기 위해 아래 외부 서비스를 이용합니다. 이 과정에서 각 사업자가 접속 IP 주소, 기기·브라우저 정보 등 일반적인 접속 기록을 처리할 수 있으며, 이는 각 사업자의 개인정보처리방침을 따릅니다.</p>
     <ul>
+      <li>FormSubmit (formsubmit.co): 1:1 상담 요청 양식의 내용을 비교파트 이메일로 전달</li>
       <li>NAVER Cloud Platform 지도 (네이버클라우드㈜): 홈 화면 지도 표시</li>
       <li>GitHub Pages (GitHub, Inc.): 웹사이트 호스팅</li>
-      <li>jsDelivr: 글꼴(Pretendard) 제공</li>
-      <li>Bubble Group, Inc. 이미지 저장소: 일부 아파트 사진 표시</li>
+            <li>Bubble Group, Inc. 이미지 저장소: 일부 아파트 사진 표시</li>
     </ul>
     <p>비교파트는 광고, 행동 추적, 분석 도구를 사용하지 않으며 위치 정보 권한을 요청하지 않습니다.</p>
 
@@ -93,8 +93,8 @@
     <hr>
     <h2 lang="en">Privacy Policy (English summary)</h2>
     <div lang="en">
-      <p>BigyoPateu can be used without an account and does not collect personal information just from browsing. If you request a 1:1 consultation, your device's email app sends us your contact details and message; we use them only to reply. With your consent we may forward them to our partner law firm. We keep them for one year after the consultation ends.</p>
-      <p>Your compare list and the optional salary you enter are stored only on your device and are never sent to us. We use NAVER Maps, GitHub Pages, jsDelivr and Bubble image hosting to display the service; these providers may process standard connection data (IP address, device information) under their own policies. We do not use ads, tracking or analytics, and we do not request location access.</p>
+      <p>BigyoPateu can be used without an account and does not collect personal information just from browsing. If you request a 1:1 consultation, the form sends your name, contact details and message to our inbox through the FormSubmit form service; we use them only to reply. With your consent we may forward them to our partner law firm. We keep them for one year after the consultation ends.</p>
+      <p>Your compare list and the optional salary you enter are stored only on your device and are never sent to us. We use FormSubmit, NAVER Maps, GitHub Pages and Bubble image hosting to display the service; these providers may process standard connection data (IP address, device information) under their own policies. We do not use ads, tracking or analytics, and we do not request location access.</p>
       <p>To access, correct or delete your information, contact <span data-contact>us</span>. Data controller: 권현준, BigyoPateu.</p>
     </div>
   </article>

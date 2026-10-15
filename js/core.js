@@ -88,6 +88,10 @@
     home: 'M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',
     more: 'M5 12h.01M12 12h.01M19 12h.01',
     chevron: 'M6 9l6 6 6-6',
+    car: 'M19 17h2v-5l-2.5-5.5A2 2 0 0 0 16.7 5H7.3a2 2 0 0 0-1.8 1.5L3 12v5h2M3 12h18M7 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0M13 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+    tree: 'M12 22v-6M8 16h8l-4-6 3 0-3-6-3 6 3 0z',
+    store: 'M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6',
+    send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
     mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
     file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6'
   };
@@ -225,6 +229,29 @@
     if (h1 && BP._rendered) { h1.setAttribute('tabindex', '-1'); h1.focus({ preventScroll: true }); }
     BP._rendered = true;
   };
+
+  /* ---------- Korean form validation messages ---------- */
+  function koMessage(el) {
+    var v = el.validity;
+    if (v.valueMissing) {
+      if (el.type === 'checkbox') return '동의 항목에 체크해 주세요.';
+      if (el.tagName === 'SELECT') return '항목을 선택해 주세요.';
+      return '이 항목을 입력해 주세요.';
+    }
+    if (v.typeMismatch && el.type === 'email') return '이메일 주소를 정확히 입력해 주세요.';
+    if (v.rangeUnderflow || v.rangeOverflow) return '입력할 수 있는 범위를 확인해 주세요.';
+    if (v.badInput) return '숫자만 입력해 주세요.';
+    return '';
+  }
+  document.addEventListener('invalid', function (e) {
+    var el = e.target;
+    el.setCustomValidity('');
+    var msg = koMessage(el);
+    if (msg) el.setCustomValidity(msg);
+  }, true);
+  ['input', 'change'].forEach(function (type) {
+    document.addEventListener(type, function (e) { if (e.target.setCustomValidity) e.target.setCustomValidity(''); }, true);
+  });
 
   BP.openDrawer = function () { document.body.classList.add('drawer-open'); };
   BP.closeDrawer = function () { document.body.classList.remove('drawer-open'); };

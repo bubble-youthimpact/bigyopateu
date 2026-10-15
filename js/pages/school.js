@@ -13,32 +13,66 @@
     return out.join('');
   }
 
-  function academyList(items) {
-    if (!items || !items.length) return '<p class="muted" style="margin:0">정보가 아직 없어요.</p>';
-    var nums = items.map(function (x) { return x.minutes != null ? x.minutes : x.meters; }).filter(function (v) { return v != null; });
-    var min = nums.length ? Math.min.apply(null, nums) : null;
-    return '<dl class="academy-list">' + items.map(function (x) {
-      var v = x.minutes != null ? x.minutes : x.meters;
-      return '<dt>' + esc(x.name) + '</dt><dd class="' + (v === min ? 'fast' : '') + '">' + esc(x.value) + '</dd>';
-    }).join('') + '</dl>';
+  // "서울강남초 (600 m)" → { name: '서울강남초', dist: '600 m', meters: 600 }
+  function place(text) {
+    if (!text || text === '-') return null;
+    var m = String(text).match(/^(.*?)\s*\((.*)\)\s*$/);
+    var name = m ? m[1] : text, dist = m ? m[2] : '';
+    var d = dist.replace(/,/g, '').match(/([\d.]+)\s*(km|m)\b/i);
+    return { name: name, dist: dist, meters: d ? (d[2].toLowerCase() === 'km' ? parseFloat(d[1]) * 1000 : parseFloat(d[1])) : null };
   }
 
-  function column(a) {
-    var schools = [['pencil', '초등학교', a.elementary], ['book', '중학교', a.middle], ['school', '고등학교', a.high], ['university', '대학교', a.university]];
-    return '<div class="col">' +
-      '<section class="panel col-head">' +
-        '<h2><a href="' + BP.aptUrl(a) + '">' + esc(a.name) + '</a></h2>' +
-        '<button type="button" class="icon-btn x" data-remove="' + esc(a.id) + '" aria-label="' + esc(a.name) + ' 빼기">' + BP.icon('x') + '</button>' +
-        '<div class="score-row"><span class="medal' + (a.eduScore == null ? ' muted' : '') + '">' + (a.eduScore != null ? a.eduScore : '-') + '</span>' +
-          '<div><div class="label">교육 환경 점수</div><div class="value">' + (a.eduScore != null ? a.eduScore + '점' : '준비 중') + '</div></div></div>' +
-        '<div class="chip-row">' + tags(a) + '</div>' +
-      '</section>' +
-      '<section class="panel"><h3 class="panel-title">학교 접근성</h3><ul class="school-list">' + schools.map(function (s) {
-        return '<li><span class="icon-tile">' + BP.icon(s[0]) + '</span><div><small>' + s[1] + '</small><span>' + BP.dash(s[2]) + '</span></div></li>';
-      }).join('') + '</ul></section>' +
-      '<section class="panel"><h3 class="panel-title">대표 수학 학원 접근성</h3>' + academyList(a.mathAcademies) + '</section>' +
-      '<section class="panel"><h3 class="panel-title">대표 영어 학원 접근성</h3>' + academyList(a.engAcademies) + '</section>' +
-    '</div>';
+  function summaryCard(a) {
+    var score = a.eduScore;
+    return '<article class="rb-card edu-card">' +
+      '<div class="rb-card-top"><div><small>' + esc(a.dong || '') + '</small><h2><a href="' + BP.aptUrl(a) + '">' + esc(a.name) + '</a></h2></div>' +
+        '<button type="button" class="icon-btn" data-remove="' + esc(a.id) + '" aria-label="' + esc(a.name) + ' 빼기">' + BP.icon('x') + '</button></div>' +
+      '<div class="rb-total"><strong>' + (score != null ? score : '-') + '</strong><span>/ 100점</span></div>' +
+      '<p class="rb-note">교육 환경 점수</p>' +
+      '<div class="edu-meter" aria-hidden="true"><span style="width:' + (score || 0) + '%"></span></div>' +
+      '<div class="chip-row edu-tags">' + tags(a) + '</div>' +
+    '</article>';
+  }
+
+  function schoolRows(apts) {
+    var rows = [['pencil', '초등학교', 'elementary'], ['book', '중학교', 'middle'], ['school', '고등학교', 'high'], ['university', '대학교', 'university']];
+    return rows.map(function (r) {
+      var cells = apts.map(function (a) { return place(a[r[2]]); });
+      var ms = cells.filter(function (c) { return c && c.meters != null; }).map(function (c) { return c.meters; });
+      var best = ms.length > 1 ? Math.min.apply(null, ms) : null;
+      var same = ms.every(function (v) { return v === best; });
+      return '<tr><th class="rowhead" scope="row"><span class="rb-crit">' + BP.icon(r[0], 'sm') + '<span><b>' + r[1] + '</b></span></span></th>' +
+        cells.map(function (c) {
+          if (!c) return '<td class="na">정보 없음</td>';
+          var isBest = best != null && !same && c.meters === best;
+          return '<td class="' + (isBest ? 'best' : '') + '"><span class="edu-place">' + esc(c.name) + '</span>' +
+            (c.dist ? '<span class="edu-dist">' + esc(c.dist) + '</span>' : '') + (isBest ? '<span class="sr-only">(가장 가까움)</span>' : '') + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+  }
+
+  function academyCell(items) {
+    if (!items || !items.length) return '<td class="na">정보 없음</td>';
+    var nums = items.map(function (x) { return x.minutes != null ? x.minutes : x.meters; }).filter(function (v) { return v != null; });
+    var min = nums.length ? Math.min.apply(null, nums) : null;
+    var max = nums.length ? Math.max.apply(null, nums) : 1;
+    return '<td><ul class="edu-acad">' + items.map(function (x) {
+      var v = x.minutes != null ? x.minutes : x.meters;
+      var fast = v === min;
+      return '<li class="' + (fast ? 'fast' : '') + '"><div><span>' + esc(x.name) + '</span><b>' + esc(x.value) + '</b></div>' +
+        '<i aria-hidden="true"><em style="width:' + (v != null ? Math.max(8, v / max * 100) : 0) + '%"></em></i></li>';
+    }).join('') + '</ul></td>';
+  }
+
+  function table(apts) {
+    var head = '<thead><tr><th class="rowhead" scope="col">항목</th>' + apts.map(function (a) { return '<th scope="col">' + esc(a.name) + '</th>'; }).join('') + '</tr></thead>';
+    return '<div class="sheet-wrap"><table class="sheet rb-sheet edu-sheet" style="min-width:' + (180 + apts.length * 230) + 'px">' + head +
+      '<tbody><tr class="group"><th class="rowhead" scope="rowgroup">학교까지 거리</th>' + apts.map(function () { return '<th></th>'; }).join('') + '</tr>' +
+      schoolRows(apts) +
+      '<tr class="group"><th class="rowhead" scope="rowgroup">대표 학원까지</th>' + apts.map(function () { return '<th></th>'; }).join('') + '</tr>' +
+      '<tr><th class="rowhead" scope="row"><span class="rb-crit">' + BP.icon('chart', 'sm') + '<span><b>수학 학원</b></span></span></th>' + apts.map(function (a) { return academyCell(a.mathAcademies); }).join('') + '</tr>' +
+      '<tr><th class="rowhead" scope="row"><span class="rb-crit">' + BP.icon('message', 'sm') + '<span><b>영어 학원</b></span></span></th>' + apts.map(function (a) { return academyCell(a.engAcademies); }).join('') + '</tr>' +
+      '</tbody></table></div>';
   }
 
   BP.page('school', {
@@ -71,11 +105,13 @@
             }).join('') + '</ul>' +
           '</section></div>';
       }
-      return '<div class="page">' + BP.backLink('#/tools') +
-        '<div class="page-head"><div><h1>최적의 학군</h1><p>학교까지의 거리, 대표 학원까지 걸리는 시간을 단지별로 나란히 비교해요. 가장 가까운 학원은 파란색으로 표시돼요.</p></div>' +
-        '<label><span class="sr-only">단지 추가</span><select class="select" data-add style="min-width:220px"' + (apts.length >= MAX ? ' disabled' : '') + '><option value="">' + (apts.length >= MAX ? '최대 3개까지 비교할 수 있어요' : '단지 추가…') + '</option>' +
+      return '<div class="page">' + '<a class="back-link" href="#/school">' + BP.icon('back', 'sm') + '처음으로</a>' +
+        '<div class="page-head"><div><h1>학군 비교</h1><p>학교까지의 거리와 대표 학원까지 걸리는 시간을 나란히 놓고 비교해요.</p></div>' +
+        '<label class="rb-picker"><span class="sr-only">단지 추가</span><select class="select" data-add' + (apts.length >= MAX ? ' disabled' : '') + '><option value="">' + (apts.length >= MAX ? '최대 3개까지 비교할 수 있어요' : '단지 추가…') + '</option>' +
           BP.aptOptions(null, { filter: function (a) { return ids.indexOf(a.id) < 0 && a.eduScore != null; } }) + '</select></label></div>' +
-        '<div class="cols" style="--n:' + apts.length + '">' + apts.map(column).join('') + '</div>' +
+        '<div class="rb-cards" style="--n:' + apts.length + '">' + apts.map(summaryCard).join('') + '</div>' +
+        '<h2 class="section-title">항목별 비교</h2>' + table(apts) +
+        '<p class="legend"><i aria-hidden="true"></i>학교는 가장 가까운 단지를, 학원은 단지마다 가장 빨리 갈 수 있는 곳을 파란색으로 표시해요.</p>' +
       '</div>';
     },
     mount: function (root, ctx) {
