@@ -10,14 +10,26 @@
     { route: 'safety', icon: 'shield', title: '안심거래센터', desc: '부동산 사기 유형, 계약 전 체크리스트, 피해 대응 절차와 1:1 상담 안내.' }
   ];
 
+  // How the tools are grouped on the 분석 도구 page and in the menu
+  BP.TOOL_GROUPS = [
+    { title: '단지 고르기', desc: '어떤 단지가 나에게 맞는지 살펴봐요.', routes: ['school', 'value', 'reviews'] },
+    { title: '생활과 미래', desc: '매일의 출퇴근과 앞으로의 가치를 따져봐요.', routes: ['commute', 'rebuild'] },
+    { title: '안전한 계약', desc: '계약 전에 확인할 것과 문제가 생겼을 때의 대응.', routes: ['safety'] }
+  ];
+  BP.tool = function (route) { return BP.TOOLS.filter(function (t) { return t.route === route; })[0]; };
+
   BP.page('tools', {
     title: '분석 도구 | 비교파트',
     render: function () {
       return '<div class="page">' +
-        '<div class="page-head"><div><h1>분석 도구</h1><p>집을 고를 때 궁금한 질문마다 하나씩 답해 주는 도구들이에요.</p></div></div>' +
-        '<div class="tool-grid">' + BP.TOOLS.map(function (t) {
-          return '<a class="tool-card" href="#/' + t.route + '"><span class="icon-tile">' + BP.icon(t.icon) + '</span><h3>' + t.title + '</h3><p>' + t.desc + '</p></a>';
-        }).join('') + '</div></div>';
+        '<div class="page-head"><div><h1>분석 도구</h1><p>집을 고를 때 궁금한 질문마다 하나씩 답해 주는 도구들이에요. 알고 싶은 것을 골라 들어가 보세요.</p></div></div>' +
+        BP.TOOL_GROUPS.map(function (g) {
+          return '<section class="tool-group"><div class="tool-group-head"><h2>' + g.title + '</h2><p>' + g.desc + '</p></div>' +
+            '<div class="tool-grid">' + g.routes.map(BP.tool).map(function (t) {
+              return '<a class="tool-card" href="#/' + t.route + '"><span class="icon-tile">' + BP.icon(t.icon) + '</span><h3>' + t.title + '</h3><p>' + t.desc + '</p></a>';
+            }).join('') + '</div></section>';
+        }).join('') +
+      '</div>';
     }
   });
 

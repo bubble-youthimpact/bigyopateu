@@ -58,7 +58,9 @@
               return '<div class="dest-row"><span class="dest-chip" style="background:' + d.color + '22;color:' + d.color + '">' + d.short[0] + '</span><span>' + d.label + '</span><span class="val">' + a[d.key] + '<small>분</small></span></div>';
             }).join('') +
             '<div class="dest-row"><span class="dest-chip" style="background:var(--paper);color:var(--muted)">+</span><span>지하철역까지 도보</span><span class="val">' + a.subwayMin + '<small>분</small></span></div>' +
-            '<p class="hint" style="margin:10px 0 0">' + esc(a.subway || '') + '</p>' +
+            '<p class="hint" style="margin:10px 0 20px">' + esc(a.subway || '') + '</p>' +
+            '<div class="commute-rank"><div><small>' + esc(a.dong) + ' ' + ranking.length + '개 단지 중</small><strong>' + (ranking.findIndex(function (r) { return r.a.id === a.id; }) + 1) + '위</strong></div>' +
+              '<p>출퇴근 스트레스가 낮은 순서예요. 아래에서 다른 단지와 비교해 보세요.</p></div>' +
           '</section>' +
           '<section class="panel stress-panel">' +
             '<div class="stress-head"><div><div style="font-weight:700">출퇴근 스트레스</div>' +

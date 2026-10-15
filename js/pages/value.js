@@ -34,17 +34,29 @@
     return { exact: exact.sort(byScore), close: close };
   }
 
-  function card(a, picked) {
+  function card(a, picked, rank) {
     var have = a.valueFeatures || [];
-    return '<article class="panel value-card">' +
-      '<header><span class="medal">' + a.valueScore + '</span><div><h3><a href="' + BP.aptUrl(a) + '">' + esc(a.name) + '</a></h3>' +
-        '<div class="meta">' + [a.buildings && a.buildings + '개동', a.households && BP.n(a.households) + '세대', a.builder].filter(Boolean).map(esc).join(', ') + '</div></div></header>' +
-      '<div class="chip-row">' + FEATURES.map(function (f) {
-        var on = have.indexOf(f[0]) >= 0;
-        var want = picked.indexOf(f[0]) >= 0;
-        return '<span class="tag ' + (on ? 'blue' : 'off') + '"' + (want && on ? ' style="font-weight:800"' : '') + '>' + (on ? '' : '<span class="sr-only">해당 없음: </span>') + f[0] + '</span>';
-      }).join('') + '</div>' +
-      '<div class="actions">' + BP.compareButton(a) + '<a class="btn btn-ghost" href="' + BP.aptUrl(a) + '">상세 정보</a></div>' +
+    var others = FEATURES.map(function (f) { return f[0]; }).filter(function (f) { return picked.indexOf(f) < 0 && have.indexOf(f) >= 0; });
+    var met = picked.filter(function (f) { return have.indexOf(f) >= 0; }).length;
+    return '<article class="vr-card">' +
+      '<a class="vr-photo" href="' + BP.aptUrl(a) + '" tabindex="-1" aria-hidden="true">' + BP.photo(a) + '<span class="vr-rank">' + rank + '위</span></a>' +
+      '<div class="vr-body">' +
+        '<header class="vr-head">' +
+          '<div><small>' + esc(a.dong || '') + '</small><h3><a href="' + BP.aptUrl(a) + '">' + esc(a.name) + '</a></h3></div>' +
+          '<div class="vr-score"><span class="medal sm">' + a.valueScore + '</span><small>저평가 점수</small></div>' +
+        '</header>' +
+        '<dl class="vr-stats">' +
+          '<div><dt>세대수</dt><dd>' + (a.households ? BP.n(a.households) + '세대' : '-') + '</dd></div>' +
+          '<div><dt>준공</dt><dd>' + (a.approvedYear ? a.approvedYear + '년' : '-') + '</dd></div>' +
+          '<div><dt>건설사</dt><dd>' + BP.dash(a.builder) + '</dd></div>' +
+        '</dl>' +
+        '<div class="vr-section"><p class="vr-label">고른 조건 <b>' + met + '/' + picked.length + '</b></p><ul class="vr-checks">' + picked.map(function (f) {
+          var ok = have.indexOf(f) >= 0;
+          return '<li class="' + (ok ? 'ok' : 'no') + '">' + BP.icon(ok ? 'check' : 'x', 'sm') + '<span>' + f + '</span><span class="sr-only">' + (ok ? ' 충족' : ' 미충족') + '</span></li>';
+        }).join('') + '</ul></div>' +
+        (others.length ? '<div class="vr-section"><p class="vr-label">그 밖의 강점</p><div class="chip-row">' + others.map(function (f) { return '<span class="tag blue">' + f + '</span>'; }).join('') + '</div></div>' : '') +
+        '<div class="vr-actions">' + BP.compareButton(a) + '<a class="btn btn-ghost" href="' + BP.aptUrl(a) + '">상세 정보 보기</a></div>' +
+      '</div>' +
     '</article>';
   }
 
@@ -58,17 +70,20 @@
       if (ctx.query.f != null && picked.length) {
         var r = results(area, picked);
         var shown = r.exact.length ? r.exact : r.close;
-        return '<div class="page">' +
+        var again = '#/value?area=' + encodeURIComponent(area) + '&sel=' + encodeURIComponent(picked.join('|'));
+        return '<div class="page">' + BP.backLink(again, '조건 다시 선택하기') +
           '<div class="page-head"><div><h1>' + (r.exact.length ? esc(area) + '에서 ' + r.exact.length + '개 단지가 조건에 맞아요' : '모든 조건에 맞는 단지는 없어요') + '</h1>' +
-            '<p>' + (r.exact.length ? '저평가 점수가 높은 순서예요. 파란색 항목이 해당 단지의 강점이에요.' : '고른 조건을 가장 많이 갖춘 단지를 대신 보여드려요.') + '</p></div>' +
-            '<a class="back-link" href="#/value?area=' + encodeURIComponent(area) + '&sel=' + encodeURIComponent(picked.join('|')) + '">' + BP.icon('back', 'sm') + '조건 다시 선택하기</a></div>' +
-          (shown.length ? '<div class="value-results">' + shown.map(function (a) { return card(a, picked); }).join('') + '</div>'
+            '<p>' + (r.exact.length ? '저평가 점수가 높은 순서로 보여드려요.' : '고른 조건을 가장 많이 갖춘 단지를 대신 보여드려요.') + '</p></div></div>' +
+          '<div class="vr-summary"><div><span class="vr-label">지역</span><span class="chip is-on">' + esc(area) + '</span></div>' +
+            '<div><span class="vr-label">고른 조건</span><div class="chip-row">' + picked.map(function (f) { return '<span class="chip is-on">' + f + '</span>'; }).join('') + '</div></div>' +
+            '<a class="btn btn-ghost btn-sm" href="' + again + '">조건 바꾸기</a></div>' +
+          (shown.length ? '<div class="vr-list">' + shown.map(function (a, i) { return card(a, picked, i + 1); }).join('') + '</div>'
             : '<div class="panel empty"><strong>' + esc(area) + '에는 이 조건을 갖춘 단지가 없어요</strong>조건을 줄이거나 다른 지역을 골라 보세요.</div>') +
         '</div>';
       }
 
       var sel = (ctx.query.sel || '').split('|');
-      return '<div class="page narrow">' + BP.backLink('#/tools') +
+      return '<div class="page">' + BP.backLink('#/tools') +
         '<form class="panel" data-form>' +
           '<div class="page-head" style="margin-bottom:22px"><div><h1>저평가 아파트를 찾아보세요</h1><p>원하는 조건을 고르면 알짜배기 아파트를 비교파트가 찾아드려요.</p></div></div>' +
           '<label class="field" style="margin-bottom:24px"><span>지역</span><select class="select" name="area">' + list.map(function (a) {

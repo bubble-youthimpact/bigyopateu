@@ -439,7 +439,13 @@ body[data-page="home"] .topline { display: none; }
 .rebuild-hero > p { color: var(--ink-2); margin: 14px auto 26px; max-width: 52ch; }
 
 /* ---------- Commute ---------- */
-.commute-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.commute-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.commute-layout > .panel:first-child { display: flex; flex-direction: column; }
+.commute-rank { margin-top: auto; padding: 26px 20px; border-radius: var(--r-md); background: var(--sky); text-align: center; }
+.commute-rank > div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.commute-rank small { color: var(--ink-2); font-size: .9rem; font-weight: 600; }
+.commute-rank strong { font-size: 2.6rem; line-height: 1.1; font-weight: 820; letter-spacing: -0.04em; color: var(--blue); font-variant-numeric: tabular-nums; }
+.commute-rank p { margin: 8px auto 0; max-width: 30ch; color: var(--ink-2); font-size: .86rem; }
 .commute-layout > * { min-width: 0; }
 .dest-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line-soft); }
 .dest-row:last-of-type { border-bottom: 0; }
@@ -683,4 +689,152 @@ body[data-page="home"] .topline { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Page-matched logo line ---------- */
+body[data-page="about"] { background: var(--white); }
+
+/* ---------- Grouped tools (분석 도구 page + menu) ---------- */
+.tool-group + .tool-group { margin-top: 40px; }
+.tool-group-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.tool-group-head h2 { margin: 0; font-size: 1.25rem; letter-spacing: -0.035em; }
+.tool-group-head p { margin: 0; color: var(--muted); font-size: .92rem; }
+.menu-toggle { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px; border: 0; border-radius: 12px; background: transparent; color: var(--on-navy); font-weight: 650; text-align: left; }
+.menu-toggle:hover { background: var(--navy-2); }
+.menu-toggle .icon-tile { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--on-navy-line); }
+.menu-toggle.is-active .icon-tile { background: var(--blue); }
+.menu-toggle .chev { margin-left: auto; color: var(--on-navy-2); transition: transform .2s ease; }
+.menu-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.sub-menu { margin: 2px 0 8px 22px; padding-left: 22px; border-left: 1px solid var(--on-navy-line); display: flex; flex-direction: column; }
+.sub-menu a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--on-navy); text-decoration: none; font-size: .93rem; font-weight: 600; }
+.sub-menu a .icon { color: var(--on-navy-2); }
+.sub-menu a:hover { background: var(--navy-2); }
+.sub-menu a.is-active { background: var(--navy-2); color: #fff; }
+.sub-menu a.is-active .icon { color: #9fbcff; }
+.sub-menu .sub-all { color: #9fbcff; }
+.sub-label { margin: 12px 10px 2px; color: var(--on-navy-2); font-size: .76rem; font-weight: 700; }
+
+/* ---------- Tool intro (empty state for 학군 / 재건축) ---------- */
+.tool-intro { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--line); background: var(--white); }
+.tool-intro-main { padding: 44px 40px; display: flex; flex-direction: column; gap: 18px; }
+.tool-intro-main h1 { margin: 0; font-size: var(--fs-2xl); line-height: 1.2; letter-spacing: -0.045em; font-weight: 820; }
+.tool-intro-main > p { margin: 0; color: var(--ink-2); max-width: 46ch; }
+.rb-picker { display: block; max-width: 440px; }
+.rb-picker .select { min-height: 54px; font-size: 1.02rem; font-weight: 650; border-color: var(--ink-2); }
+.quick-picks { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.quick-picks > span { font-size: .85rem; color: var(--muted); font-weight: 600; }
+.quick-picks .chip b { color: var(--blue); font-variant-numeric: tabular-nums; }
+.tool-intro-list { list-style: none; margin: 0; padding: 32px 30px; background: var(--navy); color: #fff; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+.tool-intro-list li { display: flex; gap: 14px; align-items: center; }
+.tool-intro-list .icon-tile { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: var(--on-navy-line); color: #fff; }
+.tool-intro-list b { display: block; font-size: .98rem; }
+.tool-intro-list small { display: block; color: var(--on-navy-2); font-size: .85rem; }
+
+/* ---------- 재건축 comparison ---------- */
+.rb-cards { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 16px; }
+.rb-cards > * { min-width: 0; }
+.rb-card { padding: 24px; border-radius: var(--r-lg); background: var(--navy); color: #fff; display: flex; flex-direction: column; gap: 6px; }
+.rb-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.rb-card-top > div { min-width: 0; }
+.rb-card-top small { color: var(--on-navy-2); font-size: .8rem; font-weight: 650; }
+.rb-card-top h2 { margin: 2px 0 0; font-size: 1.3rem; letter-spacing: -0.035em; line-height: 1.3; }
+.rb-card-top h2 a { text-decoration: none; }
+.rb-card-top h2 a:hover { text-decoration: underline; }
+.rb-card .icon-btn { color: var(--on-navy-2); margin: -8px -8px 0 0; }
+.rb-card .icon-btn:hover { background: var(--navy-2); color: #fff; }
+.rb-total { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.rb-total strong { font-size: 3.6rem; line-height: 1; font-weight: 840; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+.rb-total span { color: var(--on-navy-2); font-weight: 600; }
+.rb-total em { margin-left: auto; align-self: center; padding: 6px 14px; border-radius: 999px; background: var(--blue); font-style: normal; font-weight: 800; font-size: .95rem; }
+.rb-note { margin: 0 0 14px; color: var(--on-navy-2); font-size: .92rem; }
+.grade-track { list-style: none; margin: auto 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.grade-track li { padding: 8px 2px 7px; border-radius: 9px; background: var(--navy-2); text-align: center; color: var(--on-navy-2); font-variant-numeric: tabular-nums; }
+.grade-track b { display: block; font-size: .9rem; color: #fff; }
+.grade-track span { display: block; font-size: .7rem; }
+.grade-track li.on { background: var(--blue); color: rgba(255, 255, 255, .85); }
+
+.salary-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 220px) auto; gap: 16px; align-items: center; margin-top: 16px; padding: 16px 20px; border-radius: var(--r-lg); background: var(--sky); }
+.salary-strip .icon-tile { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--white); color: var(--blue); }
+.salary-strip label b { display: block; font-size: .98rem; }
+.salary-strip label small { display: block; color: var(--ink-2); font-size: .84rem; }
+.salary-input { position: relative; }
+.salary-input .input { padding-right: 52px; background: #fff; }
+.salary-input span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .88rem; }
+.section-title { margin: 34px 0 14px; font-size: 1.25rem; letter-spacing: -0.035em; }
+
+.rb-sheet thead th { font-weight: 780; color: var(--ink); font-size: 1rem; }
+.rb-sheet .rowhead { width: 230px; }
+.rb-sheet tbody td, .rb-sheet tbody th { padding-top: 16px; padding-bottom: 16px; vertical-align: middle; }
+.rb-crit { display: flex; gap: 12px; align-items: center; }
+.rb-crit > .icon { width: 34px; height: 34px; padding: 8px; border-radius: 10px; background: var(--sky); color: var(--blue); flex: 0 0 auto; }
+.rb-crit b { display: block; color: var(--ink); font-size: .95rem; }
+.rb-crit small { display: block; color: var(--muted); font-weight: 500; font-size: .8rem; line-height: 1.4; }
+.rb-cell { display: flex; align-items: center; gap: 12px; }
+.rb-cell strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.pips { display: inline-grid; grid-template-columns: repeat(5, 14px); gap: 3px; }
+.pips i { height: 10px; border-radius: 3px; background: var(--line); }
+.pips i.on { background: var(--blue); }
+.rb-actual { display: block; margin-top: 4px; color: var(--muted); font-size: .82rem; font-weight: 500; }
+.rb-sheet td.best .rb-actual { color: var(--blue-ink); }
+.rb-sheet tfoot th, .rb-sheet tfoot td { padding-top: 16px; padding-bottom: 16px; background: var(--paper); border-bottom: 0; vertical-align: middle; }
+.rb-sheet tfoot .rowhead { background: var(--paper); color: var(--ink); font-weight: 800; }
+.rb-sum { font-size: 1.3rem; font-weight: 820; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.rb-ref { margin-top: 22px; padding: 4px 22px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--white); }
+.rb-ref summary { padding: 16px 0; cursor: pointer; font-weight: 750; list-style-position: inside; }
+.rb-ref[open] summary { border-bottom: 1px solid var(--line-soft); margin-bottom: 18px; }
+.rb-ref[open] { padding-bottom: 22px; }
+
+/* ---------- 저평가 results ---------- */
+.vr-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; margin-bottom: 20px; padding: 16px 20px; border-radius: var(--r-lg); background: var(--white); border: 1px solid var(--line); }
+.vr-summary > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.vr-summary .btn { margin-left: auto; }
+.vr-summary .chip { min-height: 32px; font-size: .84rem; }
+.vr-label { margin: 0; color: var(--muted); font-size: .84rem; font-weight: 700; }
+.vr-label b { color: var(--blue); margin-left: 4px; }
+.vr-list { display: flex; flex-direction: column; gap: 16px; }
+.vr-card { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.vr-photo { position: relative; display: block; }
+.vr-photo .photo { height: 100%; min-height: 260px; aspect-ratio: auto; }
+.vr-rank { position: absolute; top: 14px; left: 14px; padding: 6px 12px; border-radius: 999px; background: var(--navy); color: #fff; font-weight: 800; font-size: .88rem; }
+.vr-body { padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.vr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.vr-head > div { min-width: 0; }
+.vr-head small { color: var(--muted); font-size: .82rem; font-weight: 650; }
+.vr-head h3 { margin: 2px 0 0; font-size: 1.45rem; letter-spacing: -0.04em; line-height: 1.25; }
+.vr-head h3 a { text-decoration: none; }
+.vr-head h3 a:hover { color: var(--blue); }
+.vr-score { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 auto; }
+.vr-score small { font-size: .74rem; }
+.vr-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.vr-stats div { padding: 12px 0; min-width: 0; }
+.vr-stats div + div { padding-left: 16px; border-left: 1px solid var(--line-soft); }
+.vr-stats dt { font-size: .76rem; color: var(--muted); }
+.vr-stats dd { margin: 2px 0 0; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vr-section { display: flex; flex-direction: column; gap: 10px; }
+.vr-checks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.vr-checks li { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 11px; font-size: .9rem; font-weight: 650; }
+.vr-checks li.ok { background: var(--sky); color: var(--navy); }
+.vr-checks li.ok .icon { color: var(--blue); }
+.vr-checks li.no { background: var(--paper); color: #9aa2b1; text-decoration: line-through; }
+.vr-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+@media (max-width: 1080px) {
+  .tool-intro { grid-template-columns: minmax(0, 1fr); }
+  .salary-strip { grid-template-columns: auto minmax(0, 1fr); }
+  .salary-strip .salary-input, .salary-strip .btn { grid-column: span 1; }
+}
+@media (max-width: 760px) {
+  .tool-intro-main { padding: 26px 20px; }
+  .tool-intro-list { padding: 22px 20px; }
+  .rb-cards { grid-template-columns: minmax(0, 1fr); }
+  .rb-total strong { font-size: 3rem; }
+  .salary-strip { grid-template-columns: minmax(0, 1fr); }
+  .salary-strip .icon-tile { display: none; }
+  .rb-sheet .rowhead { width: 140px; }
+  .rb-crit > .icon { display: none; }
+  .vr-card { grid-template-columns: minmax(0, 1fr); }
+  .vr-photo .photo { min-height: 0; height: 200px; }
+  .vr-body { padding: 18px; }
+  .vr-checks { grid-template-columns: minmax(0, 1fr); }
+  .vr-summary .btn { margin-left: 0; }
 }
