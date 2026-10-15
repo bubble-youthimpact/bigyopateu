@@ -15,8 +15,12 @@
   .notice small { display: inline-block; margin-top: 8px; color: #7c859b; font-size: 12px; }
   .notice code { background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
   @font-face { font-family: "Pretendard Variable"; font-weight: 45 920; font-display: swap; src: url("fonts/PretendardVariable-subset.woff2") format("woff2"); }
-  .pin { display: block; width: 30px; height: 34px; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(21,26,40,.3)); transform-origin: 2px 34px; transition: transform .12s ease; }
-  .pin:hover, .pin.is-active { transform: scale(1.22); }
+  .pin-wrap { position: relative; width: 30px; height: 34px; cursor: pointer; }
+  .pin { display: block; width: 30px; height: 34px; filter: drop-shadow(0 2px 3px rgba(21,26,40,.3)); transform-origin: 2px 34px; transition: transform .12s ease; }
+  .pin-wrap:hover .pin, .pin-wrap.is-active .pin { transform: scale(1.22); }
+  .pin-label { position: absolute; left: 16px; bottom: 44px; transform: translateX(-50%); padding: 7px 13px; border-radius: 16px; background: #fff; box-shadow: 0 4px 14px rgba(21,26,40,.16); font-size: 13px; font-weight: 700; color: #151a28; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s ease; }
+  .pin-wrap:hover .pin-label { opacity: 1; }
+  .pin-wrap.is-active .pin-label { display: none; }
   .pop { position: relative; width: 264px; background: #fff; border-radius: 16px; box-shadow: 0 14px 36px rgba(14,27,63,.24); color: #121a2e; letter-spacing: -0.01em; }
   .pop-photo { height: 132px; background: #e8f0ff; border-radius: 16px 16px 0 0; overflow: hidden; }
   .pop-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -37,7 +41,8 @@
   .pop-cmp.is-on { background: #0e1b3f; color: #fff; }
   .pop-tail { position: absolute; z-index: -1; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: #fff; transform: rotate(45deg); box-shadow: 4px 4px 8px rgba(14,27,63,.08); }
   .label { padding: 8px 14px; border-radius: 18px; background: #fff; box-shadow: 0 4px 14px rgba(21,26,40,.14); font-size: 13px; font-weight: 650; color: #151a28; white-space: nowrap; pointer-events: none; }
-  .cluster { padding: 10px 16px; border-radius: 999px; background: #246bfe; color: #fff; font-weight: 750; font-size: 14px; border: 2px solid #fff; box-shadow: 0 3px 10px rgba(21,26,40,.3); cursor: pointer; white-space: nowrap; }
+  .cluster { display: grid; place-items: center; border-radius: 50%; background: #246bfe; color: #fff; font-weight: 800; font-size: 15px; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(36,107,254,.22), 0 4px 12px rgba(21,26,40,.28); cursor: pointer; font-variant-numeric: tabular-nums; box-sizing: border-box; transition: transform .12s ease; }
+  .cluster:hover { transform: scale(1.08); }
 </style>
 </head>
 <body>
@@ -59,8 +64,8 @@
   var CONFIG = window.BIGYO_CONFIG || {};
   var ALL = ((window.BIGYO_DATA && window.BIGYO_DATA.apartments) || []).filter(function (a) { return a.lat && a.lng; });
   var embedded = window.parent !== window;
-  var CLICK_ZOOM = 15, CLUSTER_BELOW = 12;
-  var map, info, popup, popupId = null, markers = [], data = ALL.slice(), compared = [];
+  var CLUSTER_RADIUS = 36;   // pins closer than this many screen pixels merge into one count bubble
+  var map, popup, popupId = null, markers = [], pinById = {}, data = ALL.slice(), compared = [];
   var params = new URLSearchParams(location.search);
   var focusArea = params.get('area');
   var leftInset = parseInt(params.get('inset') || '0', 10);
@@ -77,9 +82,15 @@
   }
 
   // Marker: the house speech-bubble image; its tail tip (bottom-left) points at the apartment
-  var PIN = '<img class="pin" src="images/marker.png" alt="" width="30" height="34">';
+  function pinHtml(a) {
+    return '<div class="pin-wrap" data-id="' + esc(a.id) + '"><img class="pin" src="images/marker.png" alt="" width="30" height="34"><span class="pin-label">' + esc(a.name) + '</span></div>';
+  }
 
-  function closePopup() { if (popup) popup.close(); popupId = null; }
+  function markActive(id) {
+    document.querySelectorAll('.pin-wrap.is-active').forEach(function (el) { el.classList.remove('is-active'); });
+    if (id) { var el = document.querySelector('.pin-wrap[data-id="' + CSS.escape(id) + '"]'); if (el) el.classList.add('is-active'); }
+  }
+  function closePopup() { if (popup) popup.close(); popupId = null; markActive(null); }
 
   function popupContent(a) {
     var el = document.createElement('div');
@@ -109,51 +120,80 @@
   }
 
   function showPopup(a, marker) {
-    info.close();
     popupId = a.id;
     popup.setContent(popupContent(a));
-    popup.open(map, marker);
-    try { map.panTo(marker.getPosition()); setTimeout(function () { map.panBy(new naver.maps.Point(0, -140)); }, 320); } catch (e) {}
+    popup.open(map, marker);          // the map stays where it is (no panning)
+    markActive(a.id);
   }
 
   function clear() {
-    if (info) info.close();
-    closePopup();
     markers.forEach(function (m) { m.setMap(null); });
     markers = [];
+    pinById = {};
+  }
+
+  // Web-Mercator pixel position of an apartment at a zoom level (same tiles as Naver's map)
+  function worldPx(a, z) {
+    var scale = 256 * Math.pow(2, z), sin = Math.sin(a.lat * Math.PI / 180);
+    return { x: (a.lng + 180) / 360 * scale, y: (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale };
+  }
+
+  function clusterize(list, z) {
+    var groups = [];
+    list.forEach(function (a) {
+      var p = worldPx(a, z), hit = null;
+      for (var i = 0; i < groups.length; i++) {
+        var g = groups[i], dx = g.x - p.x, dy = g.y - p.y;
+        if (dx * dx + dy * dy < CLUSTER_RADIUS * CLUSTER_RADIUS) { hit = g; break; }
+      }
+      if (hit) {
+        hit.items.push(a);
+        hit.x += (p.x - hit.x) / hit.items.length;
+        hit.y += (p.y - hit.y) / hit.items.length;
+      } else groups.push({ x: p.x, y: p.y, items: [a] });
+    });
+    return groups;
   }
 
   function draw() {
     clear();
-    if (!data.length) return;
-    if (map.getZoom() < CLUSTER_BELOW) {
-      // one bubble per area, like the Bubble version but split by 동
-      var groups = {};
-      data.forEach(function (a) { (groups[a.dong || ''] = groups[a.dong || ''] || []).push(a); });
-      Object.keys(groups).forEach(function (area) {
-        var g = groups[area], lat = 0, lng = 0;
-        g.forEach(function (a) { lat += a.lat; lng += a.lng; });
-        var pos = new naver.maps.LatLng(lat / g.length, lng / g.length);
-        var m = new naver.maps.Marker({ position: pos, map: map, icon: { content: '<div class="cluster">' + esc(area) + ' ' + g.length + '</div>', anchor: new naver.maps.Point(40, 20) } });
-        naver.maps.Event.addListener(m, 'click', function () { map.setCenter(pos); map.setZoom(CLICK_ZOOM, true); });
+    if (!data.length) { closePopup(); return; }
+    var z = map.getZoom();
+    clusterize(data, z).forEach(function (g) {
+      if (g.items.length === 1) {
+        var a = g.items[0];
+        var m = new naver.maps.Marker({
+          position: new naver.maps.LatLng(a.lat, a.lng), map: map, title: a.name,
+          icon: { content: pinHtml(a), size: new naver.maps.Size(30, 34), anchor: new naver.maps.Point(2, 34) }
+        });
+        naver.maps.Event.addListener(m, 'click', function () { showPopup(a, m); });
         markers.push(m);
+        pinById[a.id] = m;
+        return;
+      }
+      var lat = 0, lng = 0;
+      g.items.forEach(function (a) { lat += a.lat; lng += a.lng; });
+      var n = g.items.length, size = Math.round(38 + Math.min(n, 40) * 0.6);
+      var pos = new naver.maps.LatLng(lat / n, lng / n);
+      var cm = new naver.maps.Marker({
+        position: pos, map: map, zIndex: 100 + n,
+        title: n + '개 단지',
+        icon: { content: '<div class="cluster" style="width:' + size + 'px;height:' + size + 'px">' + n + '</div>', size: new naver.maps.Size(size, size), anchor: new naver.maps.Point(size / 2, size / 2) }
       });
-      return;
-    }
-    data.forEach(function (a) {
-      var m = new naver.maps.Marker({
-        position: new naver.maps.LatLng(a.lat, a.lng), map: map, title: a.name,
-        icon: { content: PIN, size: new naver.maps.Size(30, 34), anchor: new naver.maps.Point(2, 34) }
+      naver.maps.Event.addListener(cm, 'click', function () {
+        // zoom in until this group starts to separate
+        var target = z + 1;
+        while (target < 18 && clusterize(g.items, target).length === 1) target++;
+        map.setCenter(pos);
+        map.setZoom(target, true);
       });
-      naver.maps.Event.addListener(m, 'mouseover', function () {
-        if (popupId === a.id) return;
-        info.setContent('<div class="label">' + esc(a.name) + '</div>');
-        info.open(map, m);
-      });
-      naver.maps.Event.addListener(m, 'mouseout', function () { info.close(); });
-      naver.maps.Event.addListener(m, 'click', function () { showPopup(a, m); });
-      markers.push(m);
+      markers.push(cm);
     });
+    // keep an open popup attached to its pin; close it if that pin is now inside a bubble
+    if (popupId) {
+      if (pinById[popupId]) { popup.open(map, pinById[popupId]); markActive(popupId); }
+      else closePopup();
+    }
   }
 
   function fit(list) {
@@ -203,16 +243,16 @@
         center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
         zoomControl: false, scaleControl: false, mapDataControl: false
       });
-      info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(14, -40) });
       popup = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(14, -46) });
       naver.maps.Event.addListener(map, 'zoom_changed', draw);
-      naver.maps.Event.addListener(map, 'click', function () { info.close(); closePopup(); });
+      naver.maps.Event.addListener(map, 'click', function () { closePopup(); });
       window.addEventListener('resize', function () { map.autoResize(); });
 
       // Start zoomed out, centred on every apartment (or one area if the page asks for it)
       var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL;
       fit(first.length ? first : ALL);
       if (!focusArea && map.getZoom() > 13) map.setZoom(13);
+      if (!focusArea && map.getZoom() < 12) map.setZoom(12);
       draw();
       if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
     } catch (err) {
