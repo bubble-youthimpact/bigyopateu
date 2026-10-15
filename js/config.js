@@ -6,7 +6,7 @@ window.BIGYO_CONFIG = {
   // The iOS / Android app loads the Naver map from here, because Naver only
   // accepts map requests from domains you registered in the NAVER Cloud console.
   // e.g. "https://yourname.github.io/bigyopateu/"  or  "https://bigyopateu.com/"
-  siteUrl: "",
+  siteUrl: "https://bigyopateu.com/",
 
   // NAVER Cloud Platform → AI·NAVER API → Maps → Application → "Client ID"
   // Register these Web service URLs for that key:
