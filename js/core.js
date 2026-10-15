@@ -152,7 +152,7 @@
     document.querySelectorAll('[data-compare-count]').forEach(function (el) { el.textContent = list.length || ''; });
     var tray = document.getElementById('tray');
     if (!tray) return;
-    var onCompare = (location.hash || '').indexOf('#/compare') === 0;
+    var onCompare = BP.parseHash().name === 'compare';
     tray.classList.toggle('is-visible', list.length > 0 && !onCompare);
     tray.querySelector('.tray-names').innerHTML = '<b>' + list.length + '개</b>' + list.map(esc).join(', ');
   };
@@ -184,8 +184,52 @@
   BP.pages = {};
   BP.page = function (name, def) { BP.pages[name] = def; };
 
+  /*
+   * URLs. Pages always refer to each other as "#/apartments", "#/apt/<name>" …
+   * On the website those are shown as clean addresses (bigyopateu.com/apartments,
+   * bigyopateu.com/apt?id=<name>). scripts/build-pages.js writes a copy of
+   * index.html for every page (apartments.html …) so GitHub Pages can serve them.
+   * Inside the apps (local files) the #/ addresses are kept — nobody sees them there.
+   */
+  var CLEAN = /^https?:$/.test(location.protocol) && !BP.inApp && location.hostname !== 'appassets.androidplatform.net';
+  BP.cleanUrls = CLEAN;
+  var BASE = (function () {
+    var site = (window.BIGYO_CONFIG || {}).siteUrl || '';
+    var m = site.match(/^https?:\/\/([^/]+)(\/.*)?$/);
+    if (m && m[1] === location.host) return (m[2] || '/').replace(/[^/]*$/, '');
+    return location.pathname.replace(/[^/]*$/, '');
+  })();
+
+  // "#/apt/래미안?x=1" → "/apt?id=래미안&x=1"
+  BP.url = function (route) {
+    if (!CLEAN) return route;
+    var h = String(route).replace(/^#\/?/, '');
+    var qi = h.indexOf('?');
+    var path = qi >= 0 ? h.slice(0, qi) : h;
+    var q = qi >= 0 ? h.slice(qi + 1) : '';
+    var parts = path.split('/').filter(Boolean);
+    if (parts[0] === 'apt' && parts[1]) return BASE + 'apt?id=' + parts[1] + (q ? '&' + q : '');
+    return BASE + path + (q ? '?' + q : '');
+  };
+  // The current address, always in "#/…" form
+  BP.route = function () {
+    var hash = location.hash || '';
+    if (!CLEAN || hash.indexOf('#/') === 0) return hash.indexOf('#/') === 0 ? hash : '#/';
+    var rest = location.pathname.slice(BASE.length).replace(/\.html$/, '').replace(/^index$/, '');
+    var search = location.search.replace(/^\?/, '');
+    if (rest === 'apt') {
+      var id = '', others = [];
+      search.split('&').forEach(function (kv) {
+        if (!kv) return;
+        if (kv.indexOf('id=') === 0) id = kv.slice(3); else others.push(kv);
+      });
+      return '#/apt/' + id + (others.length ? '?' + others.join('&') : '');
+    }
+    return '#/' + rest + (search ? '?' + search : '');
+  };
+
   BP.parseHash = function () {
-    var h = (location.hash || '#/').replace(/^#\/?/, '');
+    var h = BP.route().replace(/^#\/?/, '');
     var qi = h.indexOf('?');
     var path = qi >= 0 ? h.slice(0, qi) : h;
     var query = {};
@@ -197,14 +241,41 @@
     var parts = path.split('/').filter(Boolean).map(decodeURIComponent);
     return { name: parts[0] || 'home', params: parts.slice(1), query: query };
   };
-  BP.go = function (hash) { location.hash = hash; };
+  BP.go = function (route) {
+    if (!CLEAN) { location.hash = route; return; }
+    history.pushState(null, '', BP.url(route));
+    BP._navCount++;
+    BP.render();
+  };
   BP.setQuery = function (query) {
     var r = BP.parseHash();
     var qs = Object.keys(query).filter(function (k) { return query[k] != null && query[k] !== ''; })
       .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(query[k]); }).join('&');
     var base = '#/' + [r.name].concat(r.params).map(encodeURIComponent).join('/');
-    history.replaceState(null, '', base + (qs ? '?' + qs : ''));
+    history.replaceState(null, '', BP.url(base + (qs ? '?' + qs : '')));
   };
+  // Show clean addresses on links (so "copy link" and "open in new tab" work)
+  BP.linkify = function (root) {
+    if (!CLEAN) return;
+    (root || document).querySelectorAll('a[href^="#/"]').forEach(function (a) {
+      var r = a.getAttribute('href');
+      a.setAttribute('data-route', r);
+      a.setAttribute('href', BP.url(r));
+    });
+  };
+  if (CLEAN) {
+    // old #/ links and /index.html → clean address
+    var now = BP.url(BP.route());
+    if (now !== location.pathname + location.search) history.replaceState(null, '', now);
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target.closest && e.target.closest('a[data-route], a[href^="#/"]');
+      if (!a || (a.target && a.target !== '_self')) return;
+      e.preventDefault();
+      BP.go(a.getAttribute('data-route') || a.getAttribute('href'));
+    });
+    window.addEventListener('popstate', function () { BP._navCount++; BP.render(); });
+  }
 
   BP.render = function () {
     var r = BP.parseHash();
@@ -222,6 +293,7 @@
       a.classList.toggle('is-active', names.indexOf(r.name) >= 0);
     });
     if (page.mount) page.mount(holder, ctx);
+    BP.linkify(document);
     BP.closeDrawer();
     BP.refreshTray();
     if (!page.keepScroll) window.scrollTo(0, 0);
@@ -261,7 +333,12 @@
     else BP.go(fallback || '#/');
   };
   BP._navCount = 0;
-  window.addEventListener('hashchange', function () { BP._navCount++; BP.render(); });
+  window.addEventListener('hashchange', function () {
+    if (location.hash && location.hash.indexOf('#/') !== 0) return;   // e.g. the "#view" skip link
+    if (CLEAN) history.replaceState(null, '', BP.url(BP.route()));
+    BP._navCount++;
+    BP.render();
+  });
 
   BP.backLink = function (fallback, label) {
     return '<button type="button" class="back-link" onclick="BP.back(\'' + (fallback || '#/') + '\')">' + BP.icon('back', 'sm') + (label || '뒤로가기') + '</button>';
