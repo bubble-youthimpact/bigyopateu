@@ -22,6 +22,16 @@
 <script src="js/config.js"></script>
 <script src="js/data/apartments.js"></script>
 <script>
+  // Naver's loader must be a normal <script> tag written while the page is parsing;
+  // adding it later makes the map silently never start.
+  (function () {
+    var C = window.BIGYO_CONFIG || {};
+    if (C.naverMapClientId) {
+      document.write('<script src="https://openapi.map.naver.com/openapi/v3/maps.js?' + (C.naverMapKeyParam || 'ncpKeyId') + '=' + encodeURIComponent(C.naverMapClientId) + '"><\/script>');
+    }
+  })();
+</script>
+<script>
 (function () {
   var CONFIG = window.BIGYO_CONFIG || {};
   var ALL = ((window.BIGYO_DATA && window.BIGYO_DATA.apartments) || []).filter(function (a) { return a.lat && a.lng; });
@@ -87,7 +97,7 @@
     if (!list.length) return;
     var b = new naver.maps.LatLngBounds();
     list.forEach(function (a) { b.extend(new naver.maps.LatLng(a.lat, a.lng)); });
-    map.fitBounds(b, { top: 60, right: 40, bottom: 60, left: 40 + leftInset });
+    try { map.fitBounds(b, { top: 60, right: 40, bottom: 60, left: 40 + leftInset }); } catch (e) { map.fitBounds(b); }
     if (map.getZoom() > 16) map.setZoom(16);
   }
 
@@ -115,26 +125,32 @@
     return;
   }
 
-  var s = document.createElement('script');
-  s.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?' + (CONFIG.naverMapKeyParam || 'ncpKeyId') + '=' + encodeURIComponent(CONFIG.naverMapClientId);
-  s.onerror = function () { notice('지도를 불러올 수 없어요', '인터넷 연결을 확인한 뒤 다시 시도해 주세요.'); };
-  s.onload = function () {
-    if (!window.naver || !naver.maps) return;
-    map = new naver.maps.Map('map', {
-      center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
-      zoomControl: false, scaleControl: false, mapDataControl: false, logoControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT }
-    });
-    info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(0, -10) });
-    naver.maps.Event.addListener(map, 'zoom_changed', draw);
-    naver.maps.Event.addListener(map, 'click', function () { info.close(); });
-    window.addEventListener('resize', function () { map.autoResize(); });
+  function start() {
+    try {
+      map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(37.5000, 126.9479), zoom: 15,
+        zoomControl: false, scaleControl: false, mapDataControl: false
+      });
+      info = new naver.maps.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new naver.maps.Point(0, -10) });
+      naver.maps.Event.addListener(map, 'zoom_changed', draw);
+      naver.maps.Event.addListener(map, 'click', function () { info.close(); });
+      window.addEventListener('resize', function () { map.autoResize(); });
 
-    var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL.filter(function (a) { return a.dong === (ALL[0] && ALL[0].dong); });
-    fit(first.length ? first : ALL);
-    draw();
-    if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
-  };
-  document.head.appendChild(s);
+      var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL.filter(function (a) { return a.dong === (ALL[0] && ALL[0].dong); });
+      fit(first.length ? first : ALL);
+      draw();
+      if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
+    } catch (err) {
+      notice('지도를 그리는 중 문제가 생겼어요', esc(String(err && err.message || err)));
+    }
+  }
+
+  var tries = 0;
+  (function waitForNaver() {
+    if (window.naver && naver.maps && naver.maps.Map && naver.maps.LatLng) return start();
+    if (++tries > 120) return notice('지도를 불러올 수 없어요', '네이버 지도가 응답하지 않아요. 광고 차단 확장 프로그램을 끄거나 새로고침해 보세요.');
+    setTimeout(waitForNaver, 100);
+  })();
 })();
 </script>
 </body>
