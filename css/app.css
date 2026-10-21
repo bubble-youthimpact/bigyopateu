@@ -595,7 +595,16 @@ body[data-page="home"] .topline { display: none; }
 .member img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--paper); }
 .member h3 { margin: 0; font-size: 1.35rem; letter-spacing: -0.03em; }
 .member .role { margin: 2px 0 12px; color: var(--blue); font-weight: 650; }
-.member ul { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0 0 0 18px; color: var(--ink-2); font-size: .93rem; }
+.member { align-items: start; max-width: 760px; }
+.member ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0 0 0 18px; color: var(--ink-2); font-size: .93rem; line-height: 1.55; }
+.member li small { display: block; margin-top: 2px; color: var(--muted); font-size: .84rem; }
+.member a { color: var(--blue); text-decoration: none; font-weight: 600; }
+.member a:hover { text-decoration: underline; }
+.member .interests { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--sky); color: var(--navy); font-size: .9rem; font-weight: 600; }
+.member .interests span { display: block; margin-bottom: 2px; color: var(--muted); font-size: .76rem; font-weight: 650; }
+.lang-seg { display: inline-flex; margin-bottom: 14px; padding: 3px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); }
+.lang-seg button { border: 0; background: none; padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .8rem; font-weight: 650; color: var(--muted); cursor: pointer; }
+.lang-seg button.is-on { background: var(--navy); color: #fff; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {

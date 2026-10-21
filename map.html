@@ -253,7 +253,7 @@
       var first = focusArea ? ALL.filter(function (a) { return a.dong === focusArea; }) : ALL;
       fit(first.length ? first : ALL);
       if (!focusArea && map.getZoom() > 13) map.setZoom(13);
-      if (!focusArea && map.getZoom() < 12) map.setZoom(12);
+      if (!focusArea && map.getZoom() < 11) map.setZoom(11);
       draw();
       if (embedded) window.parent.postMessage({ source: 'bigyo-map', type: 'ready' }, '*');
     } catch (err) {

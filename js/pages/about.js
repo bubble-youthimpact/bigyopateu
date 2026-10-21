@@ -3,6 +3,55 @@
   'use strict';
   var esc = BP.esc;
 
+  /* ---------- founder bio (Korean / English) ---------- */
+  var PLAY_SEARCH = 'https://play.google.com/store/search?q=War%20of%20Legends&c=apps';
+  var FOUNDER = {
+    ko: {
+      name: '권현준', role: '경기수원외국인학교 12학년',
+      interests: '학문적 관심 분야', topics: '경제학 · 행동경제학 · 주택시장',
+      items: [
+        '비교파트(<a href="https://bigyopateu.com">BigyoPateu.com</a>) 창립자·개발자',
+        '주택시장·미디어 프레이밍 연구자 — MEDCOM 2026 국제학회 발표, <i>Journal of Applied Journalism &amp; Media Studies</i> 논문 peer review 진행 중',
+        'War of Legends 수학 학습 전략 게임 기획·개발자<small>Android 앱 Google Play 출시 · <a href="' + PLAY_SEARCH + '">Google Play에서 “War of Legends” 검색</a></small>',
+        'Korea Business Competition(KBC) 마케팅 임원',
+        '경기수원외국인학교 KBC Club 창립자·회장',
+        'Polaris Korea Chapter 전 회장·현 명예회장',
+        '경기수원외국인학교 Varsity Volleyball 주장'
+      ]
+    },
+    en: {
+      name: 'Kaiden Kwon', role: 'Grade 12, Gyeonggi Suwon International School',
+      interests: 'Academic Interests', topics: 'Economics · Behavioral Economics · Housing Markets',
+      items: [
+        'Founder &amp; Developer, BigyoPateu (<a href="https://bigyopateu.com">BigyoPateu.com</a>)',
+        'Researcher in Housing Markets &amp; Media Framing — Presented research at MEDCOM 2026; manuscript currently under peer review at the <i>Journal of Applied Journalism &amp; Media Studies</i>',
+        'Creator &amp; Developer, War of Legends, math-learning strategy game<small>Android app published on Google Play · <a href="' + PLAY_SEARCH + '">Search “War of Legends” on Google Play</a></small>',
+        'Marketing Executive, Korea Business Competition (KBC)',
+        'Founder &amp; President, GSIS Korea Business Competition (KBC) Club',
+        'Former President &amp; Current Honorary President, Polaris Korea Chapter',
+        'Captain, GSIS Varsity Volleyball'
+      ]
+    }
+  };
+  function founderBio(lang) {
+    var f = FOUNDER[lang];
+    return '<div class="bio" lang="' + lang + '"><h3>' + f.name + '</h3><p class="role">' + f.role + '</p>' +
+      '<p class="interests"><span>' + f.interests + '</span>' + f.topics + '</p>' +
+      '<ul>' + f.items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul></div>';
+  }
+  function founderCard() {
+    return '<div class="member"><img src="images/about/founder.jpg" alt="권현준 (Kaiden Kwon) 사진"><div>' +
+      '<div class="lang-seg" role="group" aria-label="언어 선택"><button type="button" data-bio="ko" class="is-on" aria-pressed="true">한국어</button><button type="button" data-bio="en" aria-pressed="false">English</button></div>' +
+      '<div data-bio-body>' + founderBio('ko') + '</div></div></div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-bio]');
+    if (!b) return;
+    var card = b.closest('.member');
+    card.querySelectorAll('[data-bio]').forEach(function (x) { var on = x === b; x.classList.toggle('is-on', on); x.setAttribute('aria-pressed', on); });
+    card.querySelector('[data-bio-body]').innerHTML = founderBio(b.getAttribute('data-bio'));
+  });
+
   BP.page('about', {
     title: '비교파트 소개',
     render: function () {
@@ -21,10 +70,7 @@
           return '<article class="why-card"><img src="' + w.img + '" alt="" loading="lazy"><div class="body"><h3>' + w.title + '</h3><ul>' +
             w.points.map(function (p) { return '<li>' + BP.icon('checkCircle', 'sm') + '<span>' + p + '</span></li>'; }).join('') + '</ul></div></article>';
         }).join('') + '</div></div></section>' +
-        '<section class="team"><div class="inner"><h2>팀 소개</h2>' +
-          '<div class="member"><img src="images/about/founder.jpg" alt="권현준 대표 사진"><div><h3>권현준</h3><p class="role">비교파트 Founder &amp; CEO</p>' +
-          '<ul><li>경기수원외국인학교 산하 Key Club 수장</li><li>폴라리스 코리아 수장</li><li>경기수원외국인학교 산하 한국 경연 대회 수장</li></ul></div></div>' +
-        '</div></section>';
+        '<section class="team"><div class="inner"><h2>팀 소개</h2>' + founderCard() + '</div></section>';
     }
   });
 
