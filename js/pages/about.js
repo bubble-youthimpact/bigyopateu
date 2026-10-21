@@ -4,7 +4,7 @@
   var esc = BP.esc;
 
   /* ---------- founder bio (Korean / English) ---------- */
-  var PLAY_SEARCH = 'https://play.google.com/store/search?q=War%20of%20Legends&c=apps';
+  var PLAY_URL = 'https://play.google.com/store/apps/details?id=com.socialimpactventures.waroflegends';
   var FOUNDER = {
     ko: {
       name: '권현준', role: '경기수원외국인학교 12학년',
@@ -12,7 +12,7 @@
       items: [
         '비교파트(<a href="https://bigyopateu.com">BigyoPateu.com</a>) 창립자·개발자',
         '주택시장·미디어 프레이밍 연구자 — MEDCOM 2026 국제학회 발표, <i>Journal of Applied Journalism &amp; Media Studies</i> 논문 peer review 진행 중',
-        'War of Legends 수학 학습 전략 게임 기획·개발자<small>Android 앱 Google Play 출시 · <a href="' + PLAY_SEARCH + '">Google Play에서 “War of Legends” 검색</a></small>',
+        'War of Legends 수학 학습 전략 게임 기획·개발자<small>Android 앱 Google Play 출시 · <a href="' + PLAY_URL + '">Google Play에서 보기</a></small>',
         'Korea Business Competition(KBC) 마케팅 임원',
         '경기수원외국인학교 KBC Club 창립자·회장',
         'Polaris Korea Chapter 전 회장·현 명예회장',
@@ -25,7 +25,7 @@
       items: [
         'Founder &amp; Developer, BigyoPateu (<a href="https://bigyopateu.com">BigyoPateu.com</a>)',
         'Researcher in Housing Markets &amp; Media Framing — Presented research at MEDCOM 2026; manuscript currently under peer review at the <i>Journal of Applied Journalism &amp; Media Studies</i>',
-        'Creator &amp; Developer, War of Legends, math-learning strategy game<small>Android app published on Google Play · <a href="' + PLAY_SEARCH + '">Search “War of Legends” on Google Play</a></small>',
+        'Creator &amp; Developer, War of Legends, math-learning strategy game<small>Android app published on Google Play · <a href="' + PLAY_URL + '">View on Google Play</a></small>',
         'Marketing Executive, Korea Business Competition (KBC)',
         'Founder &amp; President, GSIS Korea Business Competition (KBC) Club',
         'Former President &amp; Current Honorary President, Polaris Korea Chapter',
