@@ -49,7 +49,7 @@
       var q = ctx.query;
       var amen = (q.amenities || '').split(',').filter(Boolean);
       return '<div class="page">' +
-        '<div class="page-head"><div><h1>모든 아파트</h1><p>' + BP.areas().map(esc).join(', ') + '의 ' + BP.apartments.length + '개 단지를 실거주 데이터로 살펴보세요.</p></div></div>' +
+        '<div class="page-head"><div><h1>모든 아파트</h1><p>서울 ' + BP.areas().length + '개 동, ' + BP.apartments.length + '개 단지를 실거주 데이터로 살펴보세요.</p></div></div>' +
         '<div class="list-toolbar">' +
           '<label class="search-box">' + BP.icon('search') + '<span class="sr-only">키워드 검색</span><input class="input" type="search" name="q" placeholder="단지명, 지역, 건설사로 검색" value="' + esc(q.q || '') + '" autocomplete="off"></label>' +
           '<label><span class="sr-only">지역</span><select class="select" name="area"><option value="">전체 지역</option>' + BP.areas().map(function (a) { return '<option' + (q.area === a ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select></label>' +
@@ -133,7 +133,7 @@
             '<div><span class="area">' + esc(a.dong || '') + '</span><h1>' + esc(a.name) + '</h1>' +
               '<p class="sub">' + [a.builder, a.approved && a.approved + ' 사용승인'].filter(Boolean).map(esc).join(', ') + '</p></div>' +
             '<div class="detail-actions">' + BP.compareButton(a) +
-              '<a class="btn btn-ghost" href="#/commute?id=' + encodeURIComponent(a.id) + '">' + BP.icon('clock', 'sm') + '출퇴근 분석</a>' +
+              (BP.commute(a) ? '<a class="btn btn-ghost" href="#/commute?id=' + encodeURIComponent(a.id) + '">' + BP.icon('clock', 'sm') + '출퇴근 분석</a>' : '') +
             '</div>' +
           '</div>' +
         '</section>' +
@@ -152,7 +152,7 @@
             ['가까운 지하철역', dash(a.subway)],
             ['역까지 도보', a.subwayMin != null ? a.subwayMin + '분' : null]
           ]) + '<div style="margin-top:20px">' + timeBars(a) + '</div>' +
-          '<p class="hint" style="margin:16px 0 0"><a href="#/commute?id=' + encodeURIComponent(a.id) + '">출퇴근 스트레스 등급 보기</a></p></section>' +
+          (BP.commute(a) ? '<p class="hint" style="margin:16px 0 0"><a href="#/commute?id=' + encodeURIComponent(a.id) + '">출퇴근 스트레스 등급 보기</a></p>' : '') + '</section>' +
 
           '<section class="panel"><h2 class="panel-title">교육 시설</h2>' +
             (a.eduScore != null ? '<div class="score-row" style="margin-bottom:18px"><span class="medal sm">' + a.eduScore + '</span><div><div class="label">교육 환경 점수</div><div style="font-weight:750">' + a.eduScore + '점</div></div></div>' : '') +

@@ -58,7 +58,7 @@
       return '<div class="home">' +
         '<aside class="home-side" aria-label="메뉴와 필터">' +
           '<a class="brand side-brand" href="#/" aria-label="비교파트 홈">' + BP.logo + '<span>BigyoPateu</span></a>' +
-          '<h1>살아본 사람의 데이터로 고르는 아파트</h1><p class="lede">' + BP.areas().join(', ') + '의 ' + BP.apartments.length + '개 단지를 지도에서 바로 비교해 보세요.</p>' +
+          '<h1>살아본 사람의 데이터로 고르는 아파트</h1><p class="lede">서울 ' + BP.areas().length + '개 동, ' + BP.apartments.length + '개 단지를 지도에서 바로 비교해 보세요.</p>' +
           '<ul class="menu-list">' + menu.map(function (m) {
             return '<li><a href="' + m.href + '"><span class="icon-tile">' + BP.icon(m.icon, 'sm') + '</span>' + m.label + '</a></li>';
           }).join('') + '</ul>' +
