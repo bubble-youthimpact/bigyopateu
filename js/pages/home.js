@@ -4,7 +4,9 @@
   var state = { amenities: [], area: '' };
 
   function mapSrc() {
-    var base = (BP.inApp && BP.config.siteUrl) ? BP.config.siteUrl.replace(/\/?$/, '/') : '';
+    // The map is part of the app (bundled), so nothing is loaded from the website.
+    // Only the iOS app, whose pages are local files (file://), still needs the hosted copy for Naver's key check.
+    var base = (BP.inApp && location.protocol === 'file:' && BP.config.siteUrl) ? BP.config.siteUrl.replace(/\/?$/, '/') : '';
     var inset = window.innerWidth > 760 ? 0 : 0;
     var v = (window.BIGYO_DATA && window.BIGYO_DATA.generatedAt) || '';
     return base + 'map.html?inset=' + inset + '&v=' + encodeURIComponent(v);

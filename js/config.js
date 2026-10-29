@@ -17,7 +17,10 @@ window.BIGYO_CONFIG = {
   naverMapKeyParam: "ncpKeyId",
 
   // Where 안심거래센터 consultation requests and privacy questions are sent.
-  contactEmail: "",
+  contactEmail: "bubble.youthimpact@gmail.com",
+
+  // Who runs the website and the apps (shown in the footer, 소개 and the privacy policy)
+  operator: "Youth Impact Studios",
 
   // 1:1 상담 form is delivered by FormSubmit (https://formsubmit.co) to this inbox.
   // The very first request sends an activation email here — click "Activate Form" once.

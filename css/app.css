@@ -236,6 +236,9 @@ body[data-page="home"] .topline { display: none; }
 /* ---------- Photos ---------- */
 .photo { position: relative; aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; background: var(--sky); }
 .photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo-credit { display: none; }
+.photo img ~ .photo-credit { display: block; position: absolute; top: 8px; left: 8px; z-index: 2; padding: 2px 7px; border-radius: 6px; background: rgba(0, 0, 0, .45); color: #fff; font-size: .66rem; font-weight: 600; line-height: 1.5; pointer-events: none; }
+.detail-hero .photo-credit { top: 14px; left: 14px; }
 .photo-ph { position: absolute; inset: 0; color: var(--blue); background:
   linear-gradient(0deg, rgba(36, 107, 254, .10) 1px, transparent 1px) 0 0 / 22px 22px,
   linear-gradient(90deg, rgba(36, 107, 254, .10) 1px, transparent 1px) 0 0 / 22px 22px,
@@ -260,7 +263,18 @@ body[data-page="home"] .topline { display: none; }
 .apt-card .stats div + div { padding-left: 14px; border-left: 1px solid var(--line-soft); }
 .apt-card .stats dt { font-size: .75rem; color: var(--muted); }
 .apt-card .stats dd { margin: 2px 0 0; font-weight: 750; font-size: .95rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.apt-card .add-compare { position: absolute; top: 12px; right: 12px; z-index: 2; }
+.apt-card .add-compare { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; gap: 8px; }
+.icon.fill { fill: currentColor; }
+.round-toggle.save.is-on { color: #ff4d6d; background: #fff; }
+.btn.save.is-on .icon { color: #ff4d6d; }
+.offline-bar { display: none; align-items: center; gap: 10px; margin: 0 var(--gutter-r) 12px var(--gutter-l); padding: 10px 14px; border-radius: 12px; background: #fff4e5; color: #8a4b00; font-size: .86rem; font-weight: 600; }
+.is-offline .offline-bar { display: flex; }
+.app-tools { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 18px; padding-bottom: 4px; scrollbar-width: none; }
+.app-tools::-webkit-scrollbar { display: none; }
+.app-tools a { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; background: var(--navy); color: #fff; text-decoration: none; font-size: .84rem; font-weight: 650; }
+.saved-empty { text-align: center; padding: 48px 20px; }
+.saved-empty .icon { width: 40px; height: 40px; color: #ff4d6d; margin-bottom: 10px; }
+.site-owner { color: var(--muted); font-size: .82rem; }
 .round-toggle { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .95); color: var(--navy); box-shadow: 0 2px 10px rgba(14, 27, 63, .2); }
 .round-toggle:hover { background: #fff; color: var(--blue); }
 .round-toggle.is-on { background: var(--blue); color: #fff; }

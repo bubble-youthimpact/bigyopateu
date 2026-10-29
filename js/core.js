@@ -93,7 +93,10 @@
     store: 'M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6',
     send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
     mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
-    file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6'
+    file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6',
+    heart: 'M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z',
+    share: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13',
+    wifiOff: 'M12 20h.01M8.5 16.5a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.7M10.7 5.1A15 15 0 0 1 22 8.8M5 12.9a10 10 0 0 1 5.2-2.7M18.6 12.4a10 10 0 0 1 1.4 1M2 2l20 20'
   };
   BP.icon = function (name, cls) {
     return '<svg class="icon ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (P[name] || '') + '"/></svg>';
@@ -107,7 +110,7 @@
     if (!a.image) return '<div class="photo ' + (cls || '') + '">' + ph + '</div>';
     return '<div class="photo ' + (cls || '') + '">' + ph +
       '<img src="' + esc(a.image) + '" alt="' + esc(a.name) + ' 전경" loading="lazy" decoding="async" onerror="this.remove()" style="position:relative">' +
-      '</div>';
+      '<span class="photo-credit">사진 출처: NAVER</span></div>';
   };
 
   /* ---------- compare tray ---------- */
@@ -127,6 +130,58 @@
     set: function (ids) { BP.store.set('compare', ids.filter(function (id) { return byId[id]; }).slice(0, MAX_COMPARE)); BP.refreshTray(); },
     clear: function () { BP.store.set('compare', []); BP.refreshTray(); }
   };
+  /* ---------- 관심 단지 (saved on this device) ---------- */
+  BP.saved = {
+    list: function () { return BP.store.get('saved', []).filter(function (id) { return byId[id]; }); },
+    has: function (id) { return BP.saved.list().indexOf(id) >= 0; },
+    toggle: function (id) {
+      var list = BP.saved.list(), i = list.indexOf(id);
+      if (i >= 0) { list.splice(i, 1); BP.toast('관심 단지에서 뺐어요'); }
+      else { list.unshift(id); BP.toast('관심 단지에 저장했어요'); }
+      BP.store.set('saved', list);
+      document.querySelectorAll('[data-saved-count]').forEach(function (el) { el.textContent = list.length || ''; });
+      return list.indexOf(id) >= 0;
+    }
+  };
+  BP.saveButton = function (a, round) {
+    var on = BP.saved.has(a.id);
+    var label = esc(a.name) + (on ? ' 관심 단지에서 빼기' : ' 관심 단지에 저장');
+    if (round) return '<button type="button" class="round-toggle save' + (on ? ' is-on' : '') + '" data-save="' + esc(a.id) + '" aria-pressed="' + on + '" aria-label="' + label + '">' + BP.icon('heart', 'sm' + (on ? ' fill' : '')) + '</button>';
+    return '<button type="button" class="btn btn-ghost save' + (on ? ' is-on' : '') + '" data-save="' + esc(a.id) + '" aria-pressed="' + on + '">' + BP.icon('heart', 'sm' + (on ? ' fill' : '')) + '<span>' + (on ? '저장됨' : '관심 단지') + '</span></button>';
+  };
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-save]');
+    if (!btn) return;
+    e.preventDefault();
+    var id = btn.getAttribute('data-save'), on = BP.saved.toggle(id);
+    document.querySelectorAll('[data-save="' + CSS.escape(id) + '"]').forEach(function (b) {
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on);
+      var round = b.classList.contains('round-toggle');
+      b.innerHTML = BP.icon('heart', 'sm' + (on ? ' fill' : '')) + (round ? '' : '<span>' + (on ? '저장됨' : '관심 단지') + '</span>');
+    });
+    if (BP.parseHash().name === 'saved') BP.render();
+  });
+
+  /* ---------- share: the phone's share sheet in the app, the browser's elsewhere ---------- */
+  BP.share = function (a) {
+    var site = (CONFIG.siteUrl || 'https://bigyopateu.com/').replace(/\/?$/, '/');
+    var url = site + 'apt?id=' + encodeURIComponent(a.id);
+    var text = a.name + (a.dong ? ' (' + a.dong + ')' : '') + ' — 비교파트에서 단지 정보를 확인해 보세요.';
+    if (window.BigyoApp && window.BigyoApp.share) { window.BigyoApp.share(a.name, text, url); return; }
+    if (navigator.share) { navigator.share({ title: a.name, text: text, url: url }).catch(function () {}); return; }
+    var done = function () { BP.toast('링크를 복사했어요'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt('링크를 복사하세요', url); });
+    else prompt('링크를 복사하세요', url);
+  };
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-share]');
+    if (!btn) return;
+    e.preventDefault();
+    var a = BP.get(btn.getAttribute('data-share'));
+    if (a) BP.share(a);
+  });
+
   BP.compareButton = function (a, round) {
     var on = BP.compare.has(a.id);
     if (round) {

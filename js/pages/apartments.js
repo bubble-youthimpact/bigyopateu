@@ -4,7 +4,7 @@
   var esc = BP.esc, dash = BP.dash;
 
   var SORTS = {
-    name: { label: '이름순', fn: function (a, b) { return a.name.localeCompare(b.name, 'ko'); } },
+    name: { label: '이름순', fn: function (a, b) { return ((b.image ? 1 : 0) - (a.image ? 1 : 0)) || a.name.localeCompare(b.name, 'ko'); } },
     households: { label: '세대수 많은 순', fn: function (a, b) { return (b.households || 0) - (a.households || 0); } },
     newest: { label: '최근 준공 순', fn: function (a, b) { return (b.approvedYear || 0) - (a.approvedYear || 0); } },
     subway: { label: '역에서 가까운 순', fn: function (a, b) { return (a.subwayMin == null ? 999 : a.subwayMin) - (b.subwayMin == null ? 999 : b.subwayMin); } }
@@ -12,7 +12,7 @@
 
   BP.aptCard = function (a, extra) {
     return '<article class="apt-card">' +
-      '<div class="add-compare">' + BP.compareButton(a, true) + '</div>' +
+      '<div class="add-compare">' + BP.saveButton(a, true) + BP.compareButton(a, true) + '</div>' +
       '<a href="' + BP.aptUrl(a) + '">' +
         '<div style="position:relative">' + BP.photo(a) + '<div class="over"><small>' + esc(a.dong || '') + '</small><h3>' + esc(a.name) + '</h3></div></div>' +
         '<div class="body">' + (extra || '<dl class="stats">' +
@@ -50,6 +50,9 @@
       var amen = (q.amenities || '').split(',').filter(Boolean);
       return '<div class="page">' +
         '<div class="page-head"><div><h1>모든 아파트</h1><p>서울 ' + BP.areas().length + '개 동, ' + BP.apartments.length + '개 단지를 실거주 데이터로 살펴보세요.</p></div></div>' +
+        (BP.inApp ? '<nav class="app-tools" aria-label="분석 도구">' + BP.TOOLS.map(function (t) {
+          return '<a href="#/' + t.route + '">' + BP.icon(t.icon, 'sm') + t.title + '</a>';
+        }).join('') + '</nav>' : '') +
         '<div class="list-toolbar">' +
           '<label class="search-box">' + BP.icon('search') + '<span class="sr-only">키워드 검색</span><input class="input" type="search" name="q" placeholder="단지명, 지역, 건설사로 검색" value="' + esc(q.q || '') + '" autocomplete="off"></label>' +
           '<label><span class="sr-only">지역</span><select class="select" name="area"><option value="">전체 지역</option>' + BP.areas().map(function (a) { return '<option' + (q.area === a ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select></label>' +
@@ -132,7 +135,8 @@
           '<div class="hero-text">' +
             '<div><span class="area">' + esc(a.dong || '') + '</span><h1>' + esc(a.name) + '</h1>' +
               '<p class="sub">' + [a.builder, a.approved && a.approved + ' 사용승인'].filter(Boolean).map(esc).join(', ') + '</p></div>' +
-            '<div class="detail-actions">' + BP.compareButton(a) +
+            '<div class="detail-actions">' + BP.compareButton(a) + BP.saveButton(a) +
+              '<button type="button" class="btn btn-ghost" data-share="' + esc(a.id) + '">' + BP.icon('share', 'sm') + '<span>공유</span></button>' +
               (BP.commute(a) ? '<a class="btn btn-ghost" href="#/commute?id=' + encodeURIComponent(a.id) + '">' + BP.icon('clock', 'sm') + '출퇴근 분석</a>' : '') +
             '</div>' +
           '</div>' +

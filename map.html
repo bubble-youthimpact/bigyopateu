@@ -67,6 +67,14 @@
   // Either ALL area bubbles or ALL individual pins — never both.
   // Pins show from the first zoom level where at most 10% of pins overlap (worked out from the data).
   var PIN_ZOOM = 15;
+  // Below this zoom, bubbles group by 구 instead of 동
+  var GU_ZOOM = 13;
+  var GU = {
+    '상도동': '동작구', '사당동': '동작구', '반포동': '서초구', '방배동': '서초구', '옥수동': '성동구', '이촌동': '용산구',
+    '역삼동': '강남구', '여의도동': '영등포구', '신길동': '영등포구', '영등포동': '영등포구', '명일동': '강동구',
+    '가락동': '송파구', '풍납동': '송파구', '장지동': '송파구', '잠실동': '송파구', '신천동': '송파구', '오금동': '송파구',
+    '송파동': '송파구', '방이동': '송파구', '석촌동': '송파구', '문정동': '송파구', '마천동': '송파구', '거여동': '송파구'
+  };
   var map, popup, popupId = null, markers = [], pinById = {}, data = ALL.slice(), compared = [];
   var params = new URLSearchParams(location.search);
   var focusArea = params.get('area');
@@ -158,21 +166,48 @@
     if (!data.length) { closePopup(); return; }
 
     if (map.getZoom() < PIN_ZOOM) {
-      // zoomed out: one "N 아파트" bubble per area (동), no pins
+      // zoomed out: "N 아파트" bubbles, no pins. Far out they group by 구, closer in by 동,
+      // and bubbles that would overlap on screen are merged so they never pile up.
       closePopup();
-      var groups = {};
-      data.forEach(function (a) { (groups[a.dong || ''] = groups[a.dong || ''] || []).push(a); });
-      Object.keys(groups).forEach(function (area) {
-        var g = groups[area], lat = 0, lng = 0;
-        g.forEach(function (a) { lat += a.lat; lng += a.lng; });
-        var pos = new naver.maps.LatLng(lat / g.length, lng / g.length);
+      var z = map.getZoom(), byGu = z < GU_ZOOM, groups = {};
+      data.forEach(function (a) {
+        var key = byGu ? (GU[a.dong] || a.dong || '') : (a.dong || '');
+        (groups[key] = groups[key] || []).push(a);
+      });
+      var clusters = Object.keys(groups).map(function (k) { return { names: [k], items: groups[k] }; });
+      function centre(c) {
+        var x = 0, y = 0;
+        c.items.forEach(function (a) { var p = worldPx(a, z); x += p.x; y += p.y; });
+        return { x: x / c.items.length, y: y / c.items.length };
+      }
+      var merged = true;
+      while (merged) {
+        merged = false;
+        clusters.forEach(function (c) { c.p = centre(c); });
+        outer: for (var i = 0; i < clusters.length; i++) {
+          for (var j = i + 1; j < clusters.length; j++) {
+            if (Math.abs(clusters[i].p.x - clusters[j].p.x) < 104 && Math.abs(clusters[i].p.y - clusters[j].p.y) < 44) {
+              clusters[i].items = clusters[i].items.concat(clusters[j].items);
+              clusters[i].names = clusters[i].names.concat(clusters[j].names);
+              clusters.splice(j, 1);
+              merged = true;
+              break outer;
+            }
+          }
+        }
+      }
+      clusters.forEach(function (c) {
+        var lat = 0, lng = 0;
+        c.items.forEach(function (a) { lat += a.lat; lng += a.lng; });
+        var pos = new naver.maps.LatLng(lat / c.items.length, lng / c.items.length);
         var cm = new naver.maps.Marker({
-          position: pos, map: map, title: area + ' ' + g.length + '개 단지',
-          icon: { content: '<div class="cluster">' + g.length + ' 아파트</div>', anchor: new naver.maps.Point(0, 0) }
+          position: pos, map: map, title: c.names.join(', ') + ' ' + c.items.length + '개 단지',
+          icon: { content: '<div class="cluster">' + c.items.length + ' 아파트</div>', anchor: new naver.maps.Point(0, 0) }
         });
         naver.maps.Event.addListener(cm, 'click', function () {
-          map.setCenter(pos);
-          map.setZoom(PIN_ZOOM, true);      // jump straight to the pin view of this area
+          var before = map.getZoom();
+          fit(c.items);                                   // zoom to just this group
+          if (map.getZoom() <= before) map.setZoom(before + 2, true);
         });
         markers.push(cm);
       });

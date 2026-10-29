@@ -70,7 +70,10 @@
           return '<article class="why-card"><img src="' + w.img + '" alt="" loading="lazy"><div class="body"><h3>' + w.title + '</h3><ul>' +
             w.points.map(function (p) { return '<li>' + BP.icon('checkCircle', 'sm') + '<span>' + p + '</span></li>'; }).join('') + '</ul></div></article>';
         }).join('') + '</div></div></section>' +
-        '<section class="team"><div class="inner"><h2>팀 소개</h2>' + founderCard() + '</div></section>';
+        '<section class="team"><div class="inner"><h2>팀 소개</h2>' + founderCard() +
+          '<p class="site-owner" style="margin-top:24px">비교파트는 <b>Youth Impact Studios</b>가 직접 개발·운영하는 서비스로, 웹사이트(bigyopateu.com)와 Android·iOS 앱을 함께 운영합니다. 문의: <a href="mailto:bubble.youthimpact@gmail.com">bubble.youthimpact@gmail.com</a></p>' +
+          '<p class="site-owner">아파트 사진 출처: NAVER (네이버 지도·네이버 부동산). 사진의 저작권은 각 권리자에게 있습니다.</p>' +
+        '</div></section>';
     }
   });
 
