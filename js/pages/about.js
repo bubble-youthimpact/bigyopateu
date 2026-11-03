@@ -72,6 +72,7 @@
         }).join('') + '</div></div></section>' +
         '<section class="team"><div class="inner"><h2>팀 소개</h2>' + founderCard() +
           '<p class="site-owner" style="margin-top:24px">비교파트는 <b>Youth Impact Studios</b>가 직접 개발·운영하는 서비스로, 웹사이트(bigyopateu.com)와 Android·iOS 앱을 함께 운영합니다. 문의: <a href="mailto:bubble.youthimpact@gmail.com">bubble.youthimpact@gmail.com</a></p>' +
+          '<p class="site-owner">공식 앱: Google Play <b>비교파트 (com.bigyopateu.app)</b>와 App Store 앱은 이 웹사이트의 소유자인 Youth Impact Studios가 직접 개발·배포합니다. The official BigyoPateu apps (Android package com.bigyopateu.app) are developed and published by Youth Impact Studios, the owner of bigyopateu.com.</p>' +
           '<p class="site-owner">아파트 사진 출처: NAVER (네이버 지도·네이버 부동산). 사진의 저작권은 각 권리자에게 있습니다.</p>' +
         '</div></section>';
     }

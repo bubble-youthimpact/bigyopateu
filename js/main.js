@@ -48,16 +48,6 @@
 
   // In the app: start on the apartment list, and use app tabs (아파트 · 지도 · 관심 · 비교 · 더보기)
   if (BP.inApp) {
-    var tab = function (href, nav, icon, label, extra) {
-      return '<a href="' + href + '" data-nav="' + nav + '">' + BP.icon(icon) + label + (extra || '') + '</a>';
-    };
-    var bar = document.querySelector('.tabbar');
-    if (bar) bar.innerHTML =
-      tab('#/apartments', 'apartments apt', 'building', '아파트') +
-      tab('#/', 'home', 'map', '지도') +
-      tab('#/saved', 'saved', 'heart', '관심') +
-      tab('#/compare', 'compare', 'compare', '비교', '<span class="badge" data-compare-count></span>') +
-      '<button type="button" onclick="BP.openDrawer()" data-nav="tools school value commute rebuild reviews safety about">' + BP.icon('menu') + '더보기</button>';
     if (!location.hash || location.hash === '#/' || location.hash === '#') history.replaceState(null, '', '#/apartments');
   }
 

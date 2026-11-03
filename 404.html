@@ -32,7 +32,7 @@
 
 <footer class="app-footer">
   <div class="inner">
-    <span>© 비교파트 BigyoPateu · 운영 Youth Impact Studios · <a href="mailto:bubble.youthimpact@gmail.com">문의</a> · 아파트 사진 출처: NAVER</span>
+    <span>© 비교파트 BigyoPateu · 운영 Youth Impact Studios · <a href="mailto:bubble.youthimpact@gmail.com">문의</a> · 공식 Android 앱 com.bigyopateu.app · 아파트 사진 출처: NAVER</span>
     <nav aria-label="법적 고지">
       <a href="#/about">비교파트 소개</a>
       <a href="privacy.html">개인정보처리방침</a>
@@ -72,6 +72,7 @@
   <a href="#/tools" data-nav="tools school value commute rebuild reviews"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>분석</a>
   <button type="button" onclick="BP.openDrawer()" data-nav="safety about"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>더보기</button>
 </nav>
+<script>/* app tabs right away, before the big data file loads */if(/BigyoPateuApp/i.test(navigator.userAgent))document.querySelector(".tabbar").innerHTML="<a href=\"#/apartments\" data-nav=\"apartments apt\"><svg class=\"icon \" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18ZM6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4\"></path></svg>아파트</a><a href=\"#/\" data-nav=\"home\"><svg class=\"icon \" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14.1 6.3 9.9 4.2a2 2 0 0 0-1.8 0L3.6 6.5A1 1 0 0 0 3 7.4v12a1 1 0 0 0 1.4.9l3.7-1.8a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.3a1 1 0 0 0 .6-.9v-12a1 1 0 0 0-1.4-.9l-3.7 1.8a2 2 0 0 1-1.8 0ZM15 6v15M9 3v15\"></path></svg>지도</a><a href=\"#/saved\" data-nav=\"saved\"><svg class=\"icon \" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z\"></path></svg>관심</a><a href=\"#/compare\" data-nav=\"compare\"><svg class=\"icon \" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3v18M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM6 8h3M6 12h3M15 8h3M15 12h3\"></path></svg>비교<span class=\"badge\" data-compare-count=\"\"></span></a><button type=\"button\" onclick=\"BP.openDrawer()\" data-nav=\"tools school value commute rebuild reviews safety about\"><svg class=\"icon \" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h16M4 12h16M4 18h16\"></path></svg>더보기</button>";</script>
 
 <script src="js/config.js"></script>
 <script src="js/data/apartments.js"></script>

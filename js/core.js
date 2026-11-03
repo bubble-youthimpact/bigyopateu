@@ -333,6 +333,13 @@
   }
 
   BP.render = function () {
+    // close an open side menu instantly first, then draw the new page on the next frame
+    if (document.body.classList.contains('drawer-open')) {
+      document.body.classList.add('drawer-instant');
+      BP.closeDrawer();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { document.body.classList.remove('drawer-instant'); BP.render(); }); });
+      return;
+    }
     var r = BP.parseHash();
     var page = BP.pages[r.name] || BP.pages.notfound;
     var view = document.getElementById('view');

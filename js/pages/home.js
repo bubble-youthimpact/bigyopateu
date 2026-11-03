@@ -7,7 +7,7 @@
     // The map is part of the app (bundled), so nothing is loaded from the website.
     // Only the iOS app, whose pages are local files (file://), still needs the hosted copy for Naver's key check.
     var base = (BP.inApp && location.protocol === 'file:' && BP.config.siteUrl) ? BP.config.siteUrl.replace(/\/?$/, '/') : '';
-    var inset = window.innerWidth > 760 ? 0 : 0;
+    var inset = window.innerWidth > 1080 ? 0 : 0;
     var v = (window.BIGYO_DATA && window.BIGYO_DATA.generatedAt) || '';
     return base + 'map.html?inset=' + inset + '&v=' + encodeURIComponent(v);
   }
@@ -82,7 +82,7 @@
       '</div>';
     },
     mount: function (root) {
-      document.querySelector('.app-footer').hidden = window.innerWidth > 760;
+      document.querySelector('.app-footer').hidden = window.innerWidth > 1080;
       root.addEventListener('click', function (e) {
         var am = e.target.closest('[data-amenity]');
         var ar = e.target.closest('[data-area]');
